@@ -1,0 +1,4 @@
+-r base.txt
+
+# Боевой http-сервер для python-приложений
+gunicorn==20.1.0
