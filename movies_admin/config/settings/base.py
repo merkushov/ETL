@@ -40,9 +40,6 @@ INSTALLED_APPS = [
     'movies',
 ]
 
-if env('MOVIE_STAGE') == 'dev':
-    INSTALLED_APPS.append["django_extensions"]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

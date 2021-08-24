@@ -2,6 +2,8 @@ from .base import *
 
 DEBUG = env('DEBUG')
 
+INSTALLED_APPS.append("django_extensions")
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': True,
