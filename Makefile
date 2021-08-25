@@ -17,14 +17,25 @@ DOCKER_nginx=nginx
 
 .DEFAULT_GOAL := help
 
-help:
+help:	## список доступных команд
 	@grep -E '^[a-zA-Z0-9_\-\/]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo "(Other less used targets are available, open Makefile for details)"
 
-dev_setup:	## развернуть Приложение для разработки (запускать один раз)
+# настройка .env переменных dev окружения
+dev_env:
 	@cp movies_admin/.env.example movies_admin/.env
-	@docker/build
-	@app/init
+	@cp postgres_to_es/.env.example postgres_to_es/.env
+	# сгенерировать рандомные пароли для PostgreSQL
+	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' movies_admin/.env postgres_to_es/.env`
+
+
+dev_setup:	## развернуть Приложение для разработки (запускать один раз)
+	@make docker/destroy
+	@make dev_env
+	@make docker/build
+	@make docker/up
+	@make db/waiting_for_readiness
+	@make app/init
 .PHONY: dev_setup
 
 #
@@ -67,6 +78,10 @@ docker/down: 	## остановить и удалить все контейне�
 	$(DOCKER_COMPOSE) down --remove-orphans
 .PHONY: docker/down
 
+docker/destroy: 	## остановить/удалить контейнеры и очистить данные Приложения
+	$(DOCKER_COMPOSE) down --volumes --remove-orphans
+.PHONY: docker/destroy
+
 docker/build:
 	$(DOCKER_COMPOSE) build --no-cache --force-rm
 .PHONY: docker/build
@@ -90,6 +105,9 @@ db/log:		## посмотреть логи контейнера БД
 db/psql:		## интерактивный терминал PostgreSQL
 	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U postgres movie_catalog
 .PHONY: db/psql
+
+db/waiting_for_readiness:
+	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash -c 'until pg_isready 2>/dev/null; do sleep 1 ; done; echo "Database ready."'
 
 #
 # Nginx
