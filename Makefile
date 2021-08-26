@@ -13,7 +13,9 @@ DOCKER_COMPOSE=docker-compose $(DOCKER_COMPOSE_FILE)
 
 DOCKER_APP=app
 DOCKER_DB=db
-DOCKER_nginx=nginx
+DOCKER_NGINX=nginx
+DOCKER_ES=es
+DOCKER_ETL=etl
 
 .DEFAULT_GOAL := help
 
@@ -37,6 +39,8 @@ dev_setup:	## развернуть Приложение для разработ�
 	@make docker/up
 	@make db/waiting_for_readiness
 	@make app/init
+	@make es/waiting_for_readiness
+	@make etl/init
 .PHONY: dev_setup
 
 #
@@ -122,3 +126,25 @@ nginx/log:		## посмотреть логи контейнера Nginx
 	$(DOCKER_COMPOSE) logs --follow $(DOCKER_NGINX)
 .PHONY: nginx/log
 
+#
+# ETL - Сервис по перекачиванию данных из PostgreSQL в ElasticSearch
+#
+
+etl/init:	## инициализирует ElasticSearch
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) bash -c 'python3 init_es.py'
+.PHONY: etl/init
+
+etl/bash:	## доступ в контейнер с ETL
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) bash
+.PHONY: etl/bash
+
+etl/log: 	## посмотреть логи контейнера etl
+	$(DOCKER_COMPOSE) logs --follow $(DOCKER_ETL)
+.PHONY: etl/log
+
+#
+# ElasticSearch
+#
+
+es/waiting_for_readiness:
+	$(DOCKER_COMPOSE) exec $(DOCKER_ES) bash -c 'until curl --silent --output /dev/null http://localhost:9200/_cat/health?h=st; do printf "."; sleep 3; done; echo "ES ready."'
