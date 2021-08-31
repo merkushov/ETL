@@ -142,6 +142,10 @@ etl/log: 	## посмотреть логи контейнера etl
 	$(DOCKER_COMPOSE) logs --follow $(DOCKER_ETL)
 .PHONY: etl/log
 
+etl/test: 	## авто-тесты
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) bash -c 'PYTHONPATH=. pytest -rP tests'
+.Phony: etl/test
+
 #
 # ElasticSearch
 #
