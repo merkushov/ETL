@@ -94,3 +94,5 @@ db.sqlite3
 sqlite_to_elasticsearch
 helper.md
 movies_admin/static
+
+file_storage.json

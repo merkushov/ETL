@@ -4,7 +4,6 @@ import time
 
 _logger = logging.getLogger('backoff')
 _logger.addHandler(logging.NullHandler())
-_logger.setLevel(logging.INFO)
 
 
 def on_exception(start_sleep_time=0.1, factor=2, border_sleep_time=10, logger=_logger):

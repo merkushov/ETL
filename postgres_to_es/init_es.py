@@ -12,7 +12,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--indexes_path',
     type=str,
-    help='The path to the system folder with indexes. The file must be in JSON format. The file name in the folder is the name of the index',
+    help='The path to the system folder with indexes. The file must be in JSON format. '
+         'The file name in the folder is the name of the index',
     default='./es_indexes'
 )
 parser.add_argument(
@@ -26,7 +27,12 @@ args = parser.parse_args()
 
 es = Elasticsearch([os.environ.get('ELASTICSEARCH_URL')])
 
-files = [(os.path.join(args.indexes_path, f), f) for f in os.listdir(args.indexes_path) if os.path.isfile(os.path.join(args.indexes_path, f))]
+files = [
+    (
+        os.path.join(args.indexes_path, f),
+        f
+    ) for f in os.listdir(args.indexes_path) if os.path.isfile(os.path.join(args.indexes_path, f))
+]
 for path, name in files:
     index_name = name[:-5]
     with open(path) as file:
