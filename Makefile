@@ -67,6 +67,10 @@ app/test:	## test
 	@echo $(STAGE)
 .PHONY: app/test
 
+app/fake_data:	## загрузить фейковых данных для тестирования
+	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py fake_data --count_genres 100 --count_persons 3000 --count_movies 20000
+.PHONY: app/fake_data
+
 #
 # Докер
 #
@@ -145,6 +149,10 @@ etl/log: 	## посмотреть логи контейнера etl
 etl/test: 	## авто-тесты
 	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) bash -c 'PYTHONPATH=. pytest -rP tests'
 .Phony: etl/test
+
+etl/pipe:	## запустить pipe перекачки данных из Pg в ES
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) python etl.py
+.PHONY: etl/pipe
 
 #
 # ElasticSearch
