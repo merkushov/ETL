@@ -1,6 +1,7 @@
 import os
 import logging
 import psycopg2
+from psycopg2.extras import DictCursor
 
 import etl.backoff
 
@@ -42,7 +43,7 @@ class PgExtractor:
 
     @etl.backoff.on_exception(border_sleep_time=1)
     def get_movies_by_ids(self, ids: tuple):
-        cur = self.conn.cursor()
+        cur = self.conn.cursor(cursor_factory=DictCursor)
 
         sql = """
             SELECT

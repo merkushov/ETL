@@ -4,6 +4,7 @@ import logging
 from etl.extractor import PgExtractor
 from etl.loader import ESLoader
 from etl.state import State, JsonFileStorage
+from etl.entities import (Movie, Actor, Director, Writer, Person)
 
 pg_extractor = PgExtractor()
 es_loader = ESLoader()
@@ -74,13 +75,71 @@ def enrich(target):
         logging.warning("Extraction stopped")
 
 
+def _get_person_object(row):
+    person_classes_map = {
+        'актёр': Actor,
+        'директор': Director,
+        'режисёр': Director,
+        'сценарист': Writer,
+    }
+
+    person_class = person_classes_map.get(row["person_role"], None)
+    if not person_class:
+        logging.error("Can't handle role type '{}'".format(row["person_role"]))
+        return None
+
+    return person_class(
+        id=row["person_id"],
+        name=row["person_full_name"]
+    )
+
+def _get_unique(persons: list[Person]):
+    uniq = {}
+    for person in persons:
+        uniq.setdefault(person.id, person)
+
+    return list(uniq.values())
+
+
 @coroutine
 def transform(target):
     while data := (yield):
-        logging.info("transform {}".format(len(data)))
-        # print("transform {}".format(data))
 
-        target.send(data)
+        # схлопываем развёрнутые после джойнов строки sql в объекты dataclasses
+        movies = {}
+        for item in data:
+            movie = movies.setdefault(
+                item["movie_id"],
+                Movie(
+                    id=item["movie_id"],
+                    title=item["title"],
+                    description=item["description"],
+                    imdb_rating=item["rating"],
+                    type=item["type"],
+                )
+            )
+
+            person = _get_person_object(item)
+            if isinstance(person, Actor):
+                movie.actors.append(person)
+            elif isinstance(person, Director):
+                movie.directors.append(person)
+            elif isinstance(person, Writer):
+                movie.writers.append(person)
+
+            movie.genres.append(item["genre"])
+
+        # убираем дубли у всех сущностей
+        for movie in movies.values():
+            movie.actors = _get_unique(movie.actors)
+            movie.directors = _get_unique(movie.directors)
+            movie.writers = _get_unique(movie.writers)
+
+            movie.genres = list(set(movie.genres))
+
+        logging.info("Transformed {} sql rows into {} objects".format(len(data), len(movies)))
+
+        target.send(list(movies.values()))
 
 
 @coroutine
@@ -91,7 +150,8 @@ def buffer(target, batch_size=1000):
             upload_buffer += data
 
         if len(upload_buffer) >= batch_size:
-            # logging.info("buffer {}".format(len(upload_buffer)))
+            logging.info("The buffer for {} elements has been successfully formed. "
+                         "The data will be transferred further along the pipeline. ".format(len(upload_buffer)))
             target.send(upload_buffer)
             upload_buffer = []
 
@@ -103,51 +163,27 @@ def load():
         # target.send("ok")
 
 
-# def pipe(coroutines: list):
-#     built = None
-#     for f in reversed(coroutines):
-#         if built is None:
-#             built = f()
-#         else:
-#             built = f(built)
-#     return built
-
-
 def main():
-    # if state.get_state('movies.modified'):
-    #     last_modified = state.get_state('movies.modified')
-    # else:
-    #     last_modified = '2000-01-01 00:00:00'
-    #
-    # if state.get_state('movies.offset'):
-    #     offset = state.get_state('movies.offset')
-    # else:
-    #     offset = 0
-
-    # while pg_extractor.has_new_data(start=last_modified, limit=extractor_limit, offset=offset):
-
     # основной pipe на корутинах - вытаскивает данные из PG, трансформирует, буферезует и загружает в ES
     try:
         extract(
             enrich(
                 transform(
-                    buffer(load(), batch_size=5000)
+                    buffer(load(), batch_size=1000)
                 ),
             ),
-            batch_size=10
+            batch_size=100
         )
     except StopIteration:
         pass
 
-    # проталкивает в ES то что осталось в буфере
+    # доборный pipe - проталкивает в ES то что осталось в буфере
     pipe_tail = buffer(load(), batch_size=1)
     pipe_tail.send(1)
     pipe_tail.close()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='logs/etl.log', level=logging.DEBUG)
-
-    # p = pipe([init_loop, extract, set_state, transform, buffer, load])
+    logging.basicConfig(filename='logs/etl.log', level=logging.INFO)
     main()
 

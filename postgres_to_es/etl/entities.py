@@ -26,11 +26,12 @@ class Writer(Person):
 
 @dataclass(frozen=False)
 class Movie:
-    imdb_identifier: str
+    id: str
     title: str
+    type: str
+    description: str = field(default='')
     imdb_rating: float = field(default=0.0)
     genres: list = field(default_factory=list)
-    description: str = field(default='')
     directors: list[Director] = field(default_factory=list)
     writers: list[Writer] = field(default_factory=list)
     actors: list[Actor] = field(default_factory=list)
