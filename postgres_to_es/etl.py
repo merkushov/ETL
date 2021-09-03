@@ -93,6 +93,7 @@ def _get_person_object(row):
         name=row["person_full_name"]
     )
 
+
 def _get_unique(persons: list[Person]):
     uniq = {}
     for person in persons:
@@ -137,6 +138,12 @@ def transform(target):
 
             movie.genres = list(set(movie.genres))
 
+        # добавляем списки имён актёров, режисёров, сценаристов
+        for movie in movies.values():
+            movie.actors_names = list(map(lambda item: item.name, movie.actors))
+            movie.directors_names = list(map(lambda item: item.name, movie.directors))
+            movie.writers_names = list(map(lambda item: item.name, movie.writers))
+
         logging.info("Transformed {} sql rows into {} objects".format(len(data), len(movies)))
 
         target.send(list(movies.values()))
@@ -157,10 +164,14 @@ def buffer(target, batch_size=1000):
 
 
 @coroutine
-def load():
-    while data := (yield):
-        logging.info("load {}".format(len(data)))
-        # target.send("ok")
+def load(index_name=''):
+    while movies_dataclasses := (yield):
+        if movies_dataclasses and index_name:
+            logging.info("{} records will be uploaded to ElasticSearch".format(len(movies_dataclasses)))
+
+            es_loader.load_to_es(movies_dataclasses, index_name)
+        else:
+            logging.warning("There is no records for upload or ElasticSearch index name is undefined")
 
 
 def main():
@@ -169,18 +180,22 @@ def main():
         extract(
             enrich(
                 transform(
-                    buffer(load(), batch_size=1000)
+                    buffer(
+                        load(index_name='movies'), batch_size=5000
+                    )
                 ),
             ),
-            batch_size=100
+            batch_size=1000
         )
     except StopIteration:
-        pass
+        logging.info("Done. The pipeline has run out of data.")
 
     # доборный pipe - проталкивает в ES то что осталось в буфере
-    pipe_tail = buffer(load(), batch_size=1)
+    pipe_tail = buffer(load(index_name='movies'), batch_size=1)
     pipe_tail.send(1)
     pipe_tail.close()
+
+    return True
 
 
 if __name__ == '__main__':

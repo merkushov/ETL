@@ -45,12 +45,6 @@
       "id": {
         "type": "keyword"
       },
-      "imdb_rating": {
-        "type": "float"
-      },
-      "genre": {
-        "type": "keyword"
-      },
       "title": {
         "type": "text",
         "analyzer": "ru_en",
@@ -63,6 +57,15 @@
       "description": {
         "type": "text",
         "analyzer": "ru_en"
+      },
+      "imdb_rating": {
+        "type": "float"
+      },
+      "genres": {
+        "type": "keyword"
+      },
+      "type": {
+        "type": "keyword"
       },
       "actors_names": {
         "type": "text",

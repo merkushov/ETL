@@ -1,5 +1,13 @@
+import json
 import dataclasses
 from dataclasses import dataclass, field
+
+
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, object):
+        if dataclasses.is_dataclass(object):
+            return dataclasses.asdict(object)
+        return super().default(object)
 
 
 @dataclass(frozen=True)
@@ -32,6 +40,9 @@ class Movie:
     description: str = field(default='')
     imdb_rating: float = field(default=0.0)
     genres: list = field(default_factory=list)
+    actors: list[Actor] = field(default_factory=list)
     directors: list[Director] = field(default_factory=list)
     writers: list[Writer] = field(default_factory=list)
-    actors: list[Actor] = field(default_factory=list)
+    actors_names: list = field(default_factory=list)
+    directors_names: list = field(default_factory=list)
+    writers_names: list = field(default_factory=list)
