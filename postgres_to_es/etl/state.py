@@ -57,14 +57,3 @@ class State:
         # self.storage.retrieve_state().get(key, None)
         res = self.storage.retrieve_state()
         return res.get(key, None)
-
-
-if __name__ == "__main__":
-    storage = JsonFileStorage()
-    # storage.save_state({"b": 3})
-    # result = storage.retrieve_state()
-    # print(result)
-
-    s = State(storage)
-    s.set_state("rr", "bbb")
-    print(s.get_state("rr"))

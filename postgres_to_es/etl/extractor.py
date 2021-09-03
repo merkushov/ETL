@@ -18,18 +18,6 @@ class PgExtractor:
         }
         self.conn = psycopg2.connect(**pg_dns)
 
-    # def has_new_data(self, start='2000-01-01 00:00:00', limit=10, offset=0):
-    #     cur = self.conn.cursor()
-    #     cur.execute(
-    #         "SELECT COUNT(*) FROM (SELECT id FROM content.movies WHERE modified >= %s LIMIT %s OFFSET %s) q1",
-    #         (start, limit, offset)
-    #     )
-    #     res = cur.fetchone()
-    #     if res[0]:
-    #         return True
-    #
-    #     return False
-
     @etl.backoff.on_exception()
     def get_changed_movie_ids(self, modified='2000-01-01 00:00:00', limit=10, offset=0):
         cur = self.conn.cursor()

@@ -1,6 +1,7 @@
 from etl.entities import (Movie, EnhancedJSONEncoder)
 from typing import List
 from urllib.parse import urljoin
+import etl.backoff
 import json
 import logging
 import requests
@@ -24,6 +25,7 @@ class ESLoader:
             ])
         return prepared_query
 
+    @etl.backoff.on_exception()
     def load_to_es(self, records: List[Movie], index_name: str):
         """
         Отправка запроса в ES и разбор ошибок сохранения данных
