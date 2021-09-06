@@ -1,3 +1,4 @@
+import argparse
 import functools
 import logging
 
@@ -12,6 +13,26 @@ state = State(JsonFileStorage())
 
 upload_buffer = []
 
+parser = argparse.ArgumentParser(
+    prog='etl',
+    description='Script for exporting data from PostgreSQL to ElasticSearch',
+    allow_abbrev=False,
+)
+parser.add_argument(
+    '--log_level',
+    type=str,
+    help='Set the logging leve',
+    choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
+    default='WARNING',
+)
+parser.add_argument(
+    '--start_date',
+    type=str,
+    help='Date from which the data import will start, if there is no memorized state ',
+    default='2000-01-01 00:00:00',
+)
+args = parser.parse_args()
+
 
 def coroutine(func):
     @functools.wraps(func)
@@ -25,27 +46,27 @@ def coroutine(func):
 # генератор, вытаскивает данные пачками, пока данные не закончатся
 def extract(target, modified_default='', batch_size=100):
     if modified_default:
-        state.set_state('movies.modified', modified_default)
-    if not state.get_state('movies.modified'):
-        state.set_state('movies.modified', '2000-01-01 00:00:00')
+        state.set_state('movies.extractor.modified', modified_default)
+    if state.get_state('movies.loader.modified') and not state.get_state('movies.extractor.modified'):
+        state.set_state('movies.extractor.modified', state.get_state('movies.loader.modified'))
+    if not state.get_state('movies.extractor.modified'):
+        state.set_state('movies.extractor.modified', args.start_date)
     if not state.get_state('movies.offset'):
         state.set_state('movies.offset', 0)
 
     try:
         while True:
-            modified = state.get_state('movies.modified')
+            modified = state.get_state('movies.extractor.modified')
             offset = state.get_state('movies.offset')
 
             # возвращает [(<movie_id>, <movie_modified>), ...]
             data = pg_extractor.get_changed_movie_ids(modified=modified, limit=batch_size, offset=offset)
 
-            logging.info(
-                "The data has been extracted. Params: modified >= {} LIMIT {} OFFSET {}. Amount {}".format(
-                    modified, batch_size, offset, len(data))
-            )
+            logging.info("The data has been extracted. Params: modified >= %s " +
+                         "LIMIT %d OFFSET %d. Amount %d", modified, batch_size, offset, len(data))
 
             if data:
-                last_modified = state.get_state('movies.modified')
+                last_modified = state.get_state('movies.extractor.modified')
                 if last_modified == str(data[-1][1].strftime("%Y-%m-%d %H:%M:%S.%f")):
                     offset = int(state.get_state('movies.offset') or 0)
                     state.set_state('movies.offset', offset + len(data))
@@ -53,7 +74,7 @@ def extract(target, modified_default='', batch_size=100):
                     state.set_state('movies.offset', 0)
 
                 state.set_state(
-                    'movies.modified',
+                    'movies.extractor.modified',
                     str(data[-1][1].strftime("%Y-%m-%d %H:%M:%S.%f"))
                 )
 
@@ -68,7 +89,7 @@ def enrich(target):
         while ids := (yield):
             data = pg_extractor.get_movies_by_ids(ids)
 
-            logging.info("The data has been enriched. Number of rows received {}".format(len(data)))
+            logging.info("The data has been enriched. Number of rows received %d", len(data))
 
             target.send(data)
     except StopIteration:
@@ -85,7 +106,7 @@ def _get_person_object(row):
 
     person_class = person_classes_map.get(row["person_role"], None)
     if not person_class:
-        logging.error("Can't handle role type '{}'".format(row["person_role"]))
+        logging.error("Can't handle role type '%s'", row["person_role"])
         return None
 
     return person_class(
@@ -117,16 +138,19 @@ def transform(target):
                     description=item["description"],
                     imdb_rating=item["rating"],
                     type=item["type"],
+                    modified=item['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
                 )
             )
 
             person = _get_person_object(item)
-            if isinstance(person, Actor):
-                movie.actors.append(person)
-            elif isinstance(person, Director):
-                movie.directors.append(person)
-            elif isinstance(person, Writer):
-                movie.writers.append(person)
+            persons_map = {
+                'Actor': movie.actors,
+                'Director': movie.directors,
+                'Writer': movie.writers,
+            }
+            persons_container = persons_map.get(person.__class__.__name__, None)
+            if isinstance(persons_container, list):
+                persons_container.append(person)
 
             movie.genres.append(item["genre"])
 
@@ -144,21 +168,23 @@ def transform(target):
             movie.directors_names = list(map(lambda item: item.name, movie.directors))
             movie.writers_names = list(map(lambda item: item.name, movie.writers))
 
-        logging.info("Transformed {} sql rows into {} objects".format(len(data), len(movies)))
+        logging.info("Transformed %d sql rows into %d objects", len(data), len(movies))
 
         target.send(list(movies.values()))
 
 
 @coroutine
 def buffer(target, batch_size=1000):
+    # без глобальной переменной не работает
+    # нужно где-то держать данные между двумя отдельныйми пайплайнами
     global upload_buffer
     while data := (yield):
         if data and isinstance(data, list):
             upload_buffer += data
 
         if len(upload_buffer) >= batch_size:
-            logging.info("The buffer for {} elements has been successfully formed. "
-                         "The data will be transferred further along the pipeline. ".format(len(upload_buffer)))
+            logging.info("The buffer for %d elements has been successfully formed. " +
+                         "The data will be transferred further along the pipeline. ", len(upload_buffer))
             target.send(upload_buffer)
             upload_buffer = []
 
@@ -167,9 +193,15 @@ def buffer(target, batch_size=1000):
 def load(index_name=''):
     while movies_dataclasses := (yield):
         if movies_dataclasses and index_name:
-            logging.info("{} records will be uploaded to ElasticSearch".format(len(movies_dataclasses)))
+            logging.info("%d records will be uploaded to ElasticSearch", len(movies_dataclasses))
+            logging.debug(movies_dataclasses[0])
 
-            es_loader.load_to_es(movies_dataclasses, index_name)
+            res = es_loader.load_to_es(movies_dataclasses, index_name)
+            if not res:
+                raise StopIteration
+
+            state.set_state('movies.loader.modified', movies_dataclasses[-1].modified)
+
         else:
             logging.warning("There is no records for upload or ElasticSearch index name is undefined")
 
@@ -191,14 +223,18 @@ def main():
         logging.info("Done. The pipeline has run out of data.")
 
     # доборный pipe - проталкивает в ES то что осталось в буфере
-    pipe_tail = buffer(load(index_name='movies'), batch_size=1)
-    pipe_tail.send(1)
-    pipe_tail.close()
+    try:
+        pipe_tail = buffer(load(index_name='movies'), batch_size=1)
+        pipe_tail.send(1)
+    except StopIteration:
+        logging.info("Done. Additional pipeline has run out of data.")
+    finally:
+        pipe_tail.close()
 
     return True
 
 
 if __name__ == '__main__':
-    logging.basicConfig(filename='logs/etl.log', level=logging.INFO)
+    logging.basicConfig(filename='logs/etl.log', level=logging.getLevelName(args.log_level))
     main()
 

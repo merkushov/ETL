@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 
 from elasticsearch import Elasticsearch
@@ -25,6 +26,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+logging.basicConfig(filename='logs/init_es.log', level=logging.INFO)
 es = Elasticsearch([os.environ.get('ELASTICSEARCH_URL')])
 
 files = [
@@ -42,11 +44,11 @@ for path, name in files:
         if es.indices.exists(index_name):
             if args.delete_if_exists:
                 es.indices.delete(index_name)
-                print('"{}" index has been deleted'.format(index_name))
+                logging.info('"{}" index has been deleted'.format(index_name))
             else:
-                print('Index "{}" already created'.format(index_name))
+                logging.info('Index "{}" already created'.format(index_name))
 
         if not es.indices.exists(index_name):
-            print('Creating "{}" index...'.format(index_name))
+            logging.info('Creating "{}" index...'.format(index_name))
             es.indices.create(index=index_name, body=index_settings)
-            print('Index created')
+            logging.info('Index created')

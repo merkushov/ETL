@@ -117,6 +117,9 @@
             "analyzer": "ru_en"
           }
         }
+      },
+      "modified": {
+        "type": "text"
       }
     }
   }

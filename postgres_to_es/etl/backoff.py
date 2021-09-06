@@ -29,16 +29,16 @@ def on_exception(start_sleep_time=0.1, factor=2, border_sleep_time=10, logger=_l
             while True:
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception as exception:
                     sleep_time = start_sleep_time * (factor ** tries)
                     if sleep_time > border_sleep_time:
                         logger.warning(
-                            "The exception is caught. '{}' function call limit reached".format(func.__name__))
-                        raise e
-                    else:
-                        logger.info("The exception is caught. Repeated execution of the '{}' function"
-                                    "will be backed off by {} seconds.".format(func.__name__, sleep_time))
-                        time.sleep(sleep_time)
+                            "The exception is caught. '%s' function call limit reached", func.__name__)
+                        raise exception
+
+                    logger.info("The exception is caught. Repeated execution of the '%s' function"
+                                "will be backed off by %f seconds.", func.__name__, sleep_time)
+                    time.sleep(sleep_time)
 
                 tries += 1
 

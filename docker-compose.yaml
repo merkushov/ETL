@@ -11,8 +11,6 @@ services:
       - ./movies_admin/.env
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    expose:
-      - "5432"
     networks:
       - yandex_p_network
 
@@ -82,7 +80,8 @@ services:
       context: ./postgres_to_es
       dockerfile: Dockerfile
     container_name: yandex_p_etl
-    command: tail -f /dev/null
+#    command: tail -f /dev/null
+    command: python3 etl.py
     env_file:
       - ./postgres_to_es/.env
     restart: always

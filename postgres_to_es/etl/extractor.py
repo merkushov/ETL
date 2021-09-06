@@ -19,15 +19,18 @@ class PgExtractor:
         self.conn = psycopg2.connect(**pg_dns)
 
     @etl.backoff.on_exception()
-    def get_changed_movie_ids(self, modified='2000-01-01 00:00:00', limit=10, offset=0):
+    def get_changed_movie_ids(self, modified: str, limit: int, offset: int):
         cur = self.conn.cursor()
 
         sql = "SELECT id, modified FROM content.movies WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
         logging.debug(sql % (modified, limit, offset))
 
         cur.execute(sql, (modified, limit, offset))
+        res = cur.fetchall()
 
-        return cur.fetchall()
+        cur.close()
+
+        return res
 
     @etl.backoff.on_exception(border_sleep_time=1)
     def get_movies_by_ids(self, ids: tuple):
@@ -57,5 +60,8 @@ class PgExtractor:
         """
 
         cur.execute(sql, (ids,))
+        res = cur.fetchall()
 
-        return cur.fetchall()
+        cur.close()
+
+        return res

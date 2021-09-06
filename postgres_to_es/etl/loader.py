@@ -1,19 +1,23 @@
-from etl.entities import (Movie, EnhancedJSONEncoder)
 from typing import List
 from urllib.parse import urljoin
-import etl.backoff
 import json
 import logging
+import os
+
 import requests
+
+from etl.entities import (Movie, EnhancedJSONEncoder)
+import etl.backoff
 
 logger = logging.getLogger()
 
 
 class ESLoader:
     def __init__(self):
-        self.url = "http://yandex_p_es:9200"
+        self.url = os.environ.get('ELASTICSEARCH_URL')
 
-    def _get_es_bulk_query(self, rows: List[Movie], index_name: str) -> List[str]:
+    @staticmethod
+    def _get_es_bulk_query(rows: List[Movie], index_name: str) -> List[str]:
         """
         Подготавливает bulk-запрос в Elasticsearch
         """
@@ -42,8 +46,12 @@ class ESLoader:
 
         json_response = json.loads(response.content.decode())
 
+        success = True
         for item in json_response.get('items', []):
             error_message = item['index'].get('error')
             if error_message:
                 logger.error(error_message)
+                success = False
+
+        return success
 

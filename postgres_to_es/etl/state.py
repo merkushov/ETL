@@ -10,7 +10,6 @@ class BaseStorage:
         """Сохранить состояние в постоянное хранилище"""
         pass
 
-
     @abc.abstractmethod
     def retrieve_state(self) -> dict:
         """Загрузить состояние локально из постоянного хранилища"""

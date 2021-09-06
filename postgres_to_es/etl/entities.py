@@ -37,6 +37,7 @@ class Movie:
     id: str
     title: str
     type: str
+    modified: str
     description: str = field(default='')
     imdb_rating: float = field(default=0.0)
     genres: list = field(default_factory=list)

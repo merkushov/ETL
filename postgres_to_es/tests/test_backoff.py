@@ -1,10 +1,10 @@
 import pytest
-import backoff
+import etl.backoff
 
 
 def test_on_exception():
 
-    @backoff.on_exception(border_sleep_time=1)
+    @etl.backoff.on_exception(border_sleep_time=1)
     def test_func(log):
         if len(log) == 0:
             e = KeyError()
@@ -25,7 +25,7 @@ def test_on_exception():
 
 def test_on_exception_wait_till_exception():
 
-    @backoff.on_exception(border_sleep_time=1)
+    @etl.backoff.on_exception(border_sleep_time=1)
     def test_func(log):
         e = ValueError("test_func exception")
         log.append(e)
