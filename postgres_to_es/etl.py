@@ -194,7 +194,6 @@ def load(index_name=''):
     while movies_dataclasses := (yield):
         if movies_dataclasses and index_name:
             logging.info("%d records will be uploaded to ElasticSearch", len(movies_dataclasses))
-            logging.debug(movies_dataclasses[0])
 
             res = es_loader.load_to_es(movies_dataclasses, index_name)
             if not res:
