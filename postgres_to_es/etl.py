@@ -11,8 +11,6 @@ pg_extractor = PgExtractor()
 es_loader = ESLoader()
 state = State(JsonFileStorage())
 
-upload_buffer = []
-
 parser = argparse.ArgumentParser(
     prog='etl',
     description='Script for exporting data from PostgreSQL to ElasticSearch',
@@ -65,6 +63,14 @@ def extract(target, modified_default='', batch_size=100):
             logging.info("The data has been extracted. Params: modified >= %s " +
                          "LIMIT %d OFFSET %d. Amount %d", modified, batch_size, offset, len(data))
 
+            # Идея с перемещением set_state под target.send() очень интересная. Я об этом не подумал.
+            # Но это не поможет из-за того что не каждый проход pipe заканчивается загрузкой данных в ES
+            # Есть шаг Буферизации данных, перед отправкой в ES.
+            # Я держу два состояния
+            #   - movies.extractor.modified (и movies.offset) - фиксирует текущее состояние выборки данных из PostgreSQL
+            #   - movies.loader.modified - фиксирует загрузку данных в ES
+            # Если загрузка в ES провалилась, генерируется исключение и весь pipe останавливается.
+            # После повторного перезапуска состояние начинается от movies.loader.modified
             if data:
                 last_modified = state.get_state('movies.extractor.modified')
                 if last_modified == str(data[-1][1].strftime("%Y-%m-%d %H:%M:%S.%f")):
@@ -173,20 +179,23 @@ def transform(target):
         target.send(list(movies.values()))
 
 
-@coroutine
-def buffer(target, batch_size=1000):
-    # без глобальной переменной не работает
-    # нужно где-то держать данные между двумя отдельныйми пайплайнами
-    global upload_buffer
-    while data := (yield):
-        if data and isinstance(data, list):
-            upload_buffer += data
+def build_buffer(target):
+    upload_buffer = []
 
-        if len(upload_buffer) >= batch_size:
-            logging.info("The buffer for %d elements has been successfully formed. " +
-                         "The data will be transferred further along the pipeline. ", len(upload_buffer))
-            target.send(upload_buffer)
-            upload_buffer = []
+    @coroutine
+    def buffer(batch_size=1000):
+        nonlocal upload_buffer
+        while data := (yield):
+            if data and isinstance(data, list):
+                upload_buffer += data
+
+            if len(upload_buffer) >= batch_size:
+                logging.info("The buffer for %d elements has been successfully formed. " +
+                             "The data will be transferred further along the pipeline. ", len(upload_buffer))
+                target.send(upload_buffer)
+                upload_buffer = []
+
+    return buffer
 
 
 @coroutine
@@ -206,14 +215,14 @@ def load(index_name=''):
 
 
 def main():
+    buffer_core = build_buffer(load(index_name='movies'))
+
     # основной pipe на корутинах - вытаскивает данные из PG, трансформирует, буферезует и загружает в ES
     try:
         extract(
             enrich(
                 transform(
-                    buffer(
-                        load(index_name='movies'), batch_size=5000
-                    )
+                    buffer_core(batch_size=5000)
                 ),
             ),
             batch_size=1000
@@ -223,7 +232,7 @@ def main():
 
     # доборный pipe - проталкивает в ES то что осталось в буфере
     try:
-        pipe_tail = buffer(load(index_name='movies'), batch_size=1)
+        pipe_tail = buffer_core(batch_size=1)
         pipe_tail.send(1)
     except StopIteration:
         logging.info("Done. Additional pipeline has run out of data.")

@@ -1,4 +1,4 @@
-FROM python:3.10.0rc1-slim-bullseye
+FROM python:3.9.7-slim-bullseye
 
 WORKDIR /usr/src/postgres_to_es
 
