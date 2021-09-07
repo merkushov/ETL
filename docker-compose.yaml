@@ -26,8 +26,6 @@ services:
     volumes:
       - ./movies_admin:/usr/src/app
       - static_volume:/usr/src/app/static
-    expose:
-      - "8000"
     networks:
       - yandex_p_network
     depends_on:
@@ -58,8 +56,6 @@ services:
         hard: -1
     volumes:
       - es-data:/usr/share/elsticsearch/data
-    expose:
-      - "9200"
     networks:
       - yandex_p_network
 
@@ -80,8 +76,8 @@ services:
       context: ./postgres_to_es
       dockerfile: Dockerfile
     container_name: yandex_p_etl
-#    command: tail -f /dev/null
-    command: python3 etl.py
+    command: tail -f /dev/null
+#    command: python3 etl.py
     env_file:
       - ./postgres_to_es/.env
     restart: always
