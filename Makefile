@@ -25,12 +25,12 @@ help:	## список доступных команд
 
 # настройка .env переменных dev окружения
 dev_env:
-	@cp movies_admin/.env.example movies_admin/.env
+	@cp .env.example .env
 	@cp postgres_to_es/.env.example postgres_to_es/.env
 	# сгенерировать рандомные пароли для PostgreSQL
-	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' movies_admin/.env postgres_to_es/.env`
+	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`
 	# сгенерировать рандомный пароль для суперпользователя в Django
-	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' movies_admin/.env`
+	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`
 
 dev_setup:	## развернуть Приложение для разработки (запускать один раз)
 	@make dev_env
