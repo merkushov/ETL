@@ -5,7 +5,7 @@ import logging
 from etl.extractor import PgExtractor
 from etl.loader import ESLoader
 from etl.state import State, JsonFileStorage
-from etl.entities import (Movie, Actor, Director, Writer, Person)
+from etl.entities import (ElasticSearchMovie, Actor, Director, Writer, Person)
 
 pg_extractor = PgExtractor()
 es_loader = ESLoader()
@@ -102,81 +102,23 @@ def enrich(target):
         logging.warning("Extraction stopped")
 
 
-def _get_person_object(row):
-    person_classes_map = {
-        'актёр': Actor,
-        'директор': Director,
-        'режисёр': Director,
-        'сценарист': Writer,
-    }
-
-    person_class = person_classes_map.get(row["person_role"], None)
-    if not person_class:
-        logging.error("Can't handle role type '%s'", row["person_role"])
-        return None
-
-    return person_class(
-        id=row["person_id"],
-        name=row["person_full_name"]
-    )
-
-
-def _get_unique(persons: list[Person]):
-    uniq = {}
-    for person in persons:
-        uniq.setdefault(person.id, person)
-
-    return list(uniq.values())
-
-
 @coroutine
 def transform(target):
     while data := (yield):
 
         # схлопываем развёрнутые после джойнов строки sql в объекты dataclasses
-        movies = {}
+        db_rows_by_movie_ids = {}
         for item in data:
-            movie = movies.setdefault(
-                item["movie_id"],
-                Movie(
-                    id=item["movie_id"],
-                    title=item["title"],
-                    description=item["description"],
-                    imdb_rating=item["rating"],
-                    type=item["type"],
-                    modified=item['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
-                )
-            )
+            db_rows_by_movie_ids.setdefault(item["movie_id"], [])
+            db_rows_by_movie_ids[item["movie_id"]].append(item)
 
-            person = _get_person_object(item)
-            persons_map = {
-                'Actor': movie.actors,
-                'Director': movie.directors,
-                'Writer': movie.writers,
-            }
-            persons_container = persons_map.get(person.__class__.__name__, None)
-            if isinstance(persons_container, list):
-                persons_container.append(person)
-
-            movie.genres.append(item["genre"])
-
-        # убираем дубли у всех сущностей
-        for movie in movies.values():
-            movie.actors = _get_unique(movie.actors)
-            movie.directors = _get_unique(movie.directors)
-            movie.writers = _get_unique(movie.writers)
-
-            movie.genres = list(set(movie.genres))
-
-        # добавляем списки имён актёров, режисёров, сценаристов
-        for movie in movies.values():
-            movie.actors_names = list(map(lambda item: item.name, movie.actors))
-            movie.directors_names = list(map(lambda item: item.name, movie.directors))
-            movie.writers_names = list(map(lambda item: item.name, movie.writers))
+        movies = list()
+        for db_rows in db_rows_by_movie_ids.values():
+            movies.append( ElasticSearchMovie.init_by_db_rows(list(db_rows)) )
 
         logging.info("Transformed %d sql rows into %d objects", len(data), len(movies))
 
-        target.send(list(movies.values()))
+        target.send(movies)
 
 
 def build_buffer(target):

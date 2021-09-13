@@ -6,7 +6,7 @@ import os
 
 import requests
 
-from etl.entities import (Movie, EnhancedJSONEncoder)
+from etl.entities import (ElasticSearchMovie, EnhancedJSONEncoder)
 import etl.backoff
 
 logger = logging.getLogger()
@@ -17,7 +17,7 @@ class ESLoader:
         self.url = os.environ.get('ELASTICSEARCH_URL')
 
     @staticmethod
-    def _get_es_bulk_query(rows: List[Movie], index_name: str) -> List[str]:
+    def _get_es_bulk_query(rows: List[ElasticSearchMovie], index_name: str) -> List[str]:
         """
         Подготавливает bulk-запрос в Elasticsearch
         """
@@ -30,7 +30,7 @@ class ESLoader:
         return prepared_query
 
     @etl.backoff.on_exception()
-    def load_to_es(self, records: List[Movie], index_name: str):
+    def load_to_es(self, records: List[ElasticSearchMovie], index_name: str):
         """
         Отправка запроса в ES и разбор ошибок сохранения данных
         """
