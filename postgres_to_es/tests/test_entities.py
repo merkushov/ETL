@@ -53,8 +53,14 @@ db_rows_writers = [
     },
 ]
 db_rows_genres = [
-    { "genre": "комедия" },
-    { "genre": "экшн" },
+    {
+        "genre_id": "genre_test_1",
+        "genre_name": "комедия",
+    },
+    {
+        "genre_id": "genre_test_2",
+        "genre_name": "экшн",
+    },
 ]
 
 def test_movies_init_by_db_rows():

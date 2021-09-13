@@ -12,18 +12,23 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 
 @dataclass(frozen=True)
-class Person:
+class BasicStructure:
     __slots__ = ("id", "name")
     id: str
     name: str
 
     @classmethod
-    def _get_unique(cls, persons: list["Person"]) -> list["Person"]:
+    def _get_unique_by_id(cls, structure: list["BasicStructure"]) -> list["BasicStructure"]:
         uniq = {}
-        for person in persons:
-            uniq.setdefault(person.id, person)
+        for item in structure:
+            uniq.setdefault(item.id, item)
 
         return list(uniq.values())
+
+
+@dataclass(frozen=True)
+class Person(BasicStructure):
+    pass
 
 
 @dataclass(frozen=True)
@@ -38,6 +43,11 @@ class Director(Person):
 
 @dataclass(frozen=True)
 class Writer(Person):
+    pass
+
+
+@dataclass(frozen=True)
+class Genre(BasicStructure):
     pass
 
 
@@ -101,14 +111,19 @@ class ElasticSearchMovie:
             if isinstance(persons_container, list):
                 persons_container.append(person)
 
-            movie.genres.append(row["genre"])
+            movie.genres.append(
+                Genre(
+                    id=row["genre_id"],
+                    name=row["genre_name"]
+                )
+            )
 
         # убираем дубли у всех сущностей        
-        movie.actors = Actor._get_unique(movie.actors)
-        movie.directors = Director._get_unique(movie.directors)
-        movie.writers = Writer._get_unique(movie.writers)
+        movie.actors = Actor._get_unique_by_id(movie.actors)
+        movie.directors = Director._get_unique_by_id(movie.directors)
+        movie.writers = Writer._get_unique_by_id(movie.writers)
 
-        movie.genres = list(set(movie.genres))
+        movie.genres = Genre._get_unique_by_id(movie.genres)
 
         # добавляем списки имён актёров, режисёров, сценаристов
         movie.actors_names = list(map(lambda item: item.name, movie.actors))

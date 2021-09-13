@@ -48,7 +48,8 @@ class PgExtractor:
                 pr.name as person_role,
                 p.id as person_id,
                 p.full_name as person_full_name,
-                g.name as genre
+                g.id as genre_id,
+                g.name as genre_name
             FROM content.movies m
                 LEFT JOIN content.movie_person_role mpr ON m.id=mpr.movie_id
                 LEFT JOIN content.person_roles pr ON mpr.person_role_id=pr.id
