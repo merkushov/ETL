@@ -18,7 +18,7 @@ class ESLoader:
         self.index_name = index_name
 
     @staticmethod
-    def _get_es_bulk_query(rows: List[ElasticSearchMovie], index_name: str) -> List[str]:
+    def _get_es_bulk_query(rows: List[object], index_name: str) -> List[str]:
         """
         Подготавливает bulk-запрос в Elasticsearch
         """
@@ -31,7 +31,7 @@ class ESLoader:
         return prepared_query
 
     @etl.backoff.on_exception()
-    def load_to_es(self, records: List[ElasticSearchMovie]):
+    def load_to_es(self, records: List[object]):
         """
         Отправка запроса в ES и разбор ошибок сохранения данных
         """
@@ -46,6 +46,7 @@ class ESLoader:
         )
 
         json_response = json.loads(response.content.decode())
+        logging.debug(json_response)
 
         success = True
         for item in json_response.get('items', []):

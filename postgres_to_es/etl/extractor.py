@@ -74,3 +74,56 @@ class PgMovieExtractor(PgExtractor):
         cur.close()
 
         return res
+
+
+class PgGenreExtractor(PgExtractor):
+    """
+    Класс Экстрактор для извлечения данных о Жанрах из PostgreSQL
+    """
+
+    @etl.backoff.on_exception()
+    def get_modified_ids(self, modified: str, limit: int, offset: int):
+        """
+        Метод для получения идентификаторов недавно модифицированных Жанров
+        """
+        cur = self.conn.cursor()
+
+        sql = "SELECT id, modified FROM content.genres WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
+        logging.debug(sql % (modified, limit, offset))
+
+        cur.execute(sql, (modified, limit, offset))
+        res = cur.fetchall()
+
+        cur.close()
+
+        return res
+
+    @etl.backoff.on_exception(border_sleep_time=1)
+    def get_data_by_ids(self, ids: tuple):
+        """
+        Метод для получения необходимых данных по идентификаторам.
+        Жёстко связан структурой данных с etl.transformer.PGtoESGenresTransformer
+        и etl.entities.ElasticSearchGenre
+        """
+        cur = self.conn.cursor(cursor_factory=DictCursor)
+
+        sql = """
+            SELECT
+                g.id as genre_id,
+                g.name as genre_name,
+                g.modified,
+                m.id as movie_id,
+                m.title as movie_title,
+                m.rating as movie_rating
+            FROM content.genres g
+                LEFT JOIN content.movie_genre mg ON mg.genre_id=g.id
+                LEFT JOIN content.movies m ON m.id=mg.movie_id
+            WHERE g.id IN %s
+        """
+
+        cur.execute(sql, (ids,))
+        res = cur.fetchall()
+
+        cur.close()
+
+        return res

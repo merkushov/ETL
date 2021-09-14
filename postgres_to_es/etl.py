@@ -4,8 +4,8 @@ import signal
 import sys
 import time
 
-from etl.extractor import PgMovieExtractor
-from etl.transformer import PGtoESMoviesTransformer
+from etl.extractor import (PgMovieExtractor, PgGenreExtractor)
+from etl.transformer import (PGtoESMoviesTransformer, PGtoESGenresTransformer)
 from etl.loader import ESLoader
 from etl.state import State, JsonFileStorage
 from etl.pipes import PipeEETBL
@@ -21,6 +21,15 @@ def main(from_date: str):
             "transformer": PGtoESMoviesTransformer(source_unique_key="movie_id"),
             "extractor_batch_size": 1000,
             "loader_batch_size": 5000,
+        },
+        {
+            "label": "Genres. Export from PG to ES",
+            "extractor": PgGenreExtractor(),
+            "loader": ESLoader(index_name="genres"),
+            "states_keeper": State(JsonFileStorage(), key_prefix="genres.pg_to_es."),
+            "transformer": PGtoESGenresTransformer(source_unique_key="genre_id"),
+            "extractor_batch_size": 30,
+            "loader_batch_size": 600,
         }
     ]
 

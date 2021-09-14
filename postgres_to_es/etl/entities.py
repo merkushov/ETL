@@ -131,3 +131,44 @@ class ElasticSearchMovie:
         movie.writers_names = list(map(lambda item: item.name, movie.writers))
 
         return movie
+
+
+
+@dataclass(frozen=True)
+class MovieSmallWithIMDBRating:
+    id: str
+    title: str
+    imdb_rating: float
+
+
+@dataclass(frozen=False)
+class ElasticSearchGenre:
+    id: str
+    name: str
+    modified: str
+    movies: list[MovieSmallWithIMDBRating] = field(default_factory=list)
+
+    @classmethod
+    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
+        """
+            Инициализирует объект данными из БД
+            Данные из БД это строки таблиц жанров и связанных сущностей (фильмов),
+            сджойненные вмесет. Содержат много дублированной информации.
+            На вход должны приходить списки с одинаковым genre_id
+        """
+        genre = ElasticSearchGenre(
+            id=db_rows[0]["genre_id"],
+            name=db_rows[0]["genre_name"],
+            modified=db_rows[0]['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
+        )
+
+        for row in db_rows:
+            genre.movies.append(
+                MovieSmallWithIMDBRating(
+                    id=row["movie_id"],
+                    title=row["movie_title"],
+                    imdb_rating=row["movie_rating"]
+                )
+            )
+
+        return genre
