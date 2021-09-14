@@ -12,9 +12,10 @@ def coroutine(func):
     return inner
 
 # генератор, вытаскивает данные пачками, пока данные не закончатся
-def extract(target, modified_default='', batch_size=100, extractor=object, state=object):
-    if modified_default:
-        state.set_state("extractor.modified", modified_default)
+def extract(target, forced_modification_date: str, batch_size=100, extractor=object, state=object):
+    if forced_modification_date:
+        state.set_state("extractor.modified", forced_modification_date)
+        state.set_state("offset", 0)
     if state.get_state("loader.modified") and not state.get_state("extractor.modified"):
         state.set_state("extractor.modified", state.get_state("loader.modified"))
     if not state.get_state("extractor.modified"):
@@ -98,8 +99,6 @@ def load(loader=object, state=object):
     while dataclasses_objects := (yield):
         logging.info("%d records will be uploaded to ElasticSearch", len(dataclasses_objects))
 
-        print(dataclasses_objects[-1])
-
         res = loader.load_to_es(dataclasses_objects)
         if not res:
             raise StopIteration
@@ -127,7 +126,7 @@ class PipeEETBL:
         self.extractor_batch_size = extractor_batch_size
         self.loader_batch_size = loader_batch_size
 
-    def pump(self):
+    def pump(self, from_date: str):
         buffer = build_buffer()
 
         # основной pipe на корутинах - вытаскивает данные из Источника,
@@ -148,6 +147,7 @@ class PipeEETBL:
                     ),
                     extractor=self.extractor,
                 ),
+                forced_modification_date=from_date,
                 extractor=self.extractor,
                 state=self.states_keeper,
                 batch_size=self.extractor_batch_size,
