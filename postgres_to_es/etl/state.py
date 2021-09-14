@@ -44,15 +44,22 @@ class State:
     В целом ничего не мешает поменять это поведение на работу с БД или распределённым хранилищем.
     """
 
-    def __init__(self, storage: BaseStorage):
+    def __init__(self, storage: BaseStorage, key_prefix: str):
         self.storage = storage
+        self.key_prefix = key_prefix
 
     def set_state(self, key: str, value: Any) -> None:
         """Установить состояние для определённого ключа"""
+        if self.key_prefix:
+            key = self.key_prefix + key
+
         self.storage.save_state({key: value})
 
     def get_state(self, key: str) -> Any:
         """Получить состояние по определённому ключу"""
-        # self.storage.retrieve_state().get(key, None)
         res = self.storage.retrieve_state()
+
+        if self.key_prefix:
+            key = self.key_prefix + key
+
         return res.get(key, None)

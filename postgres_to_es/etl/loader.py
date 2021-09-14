@@ -13,8 +13,9 @@ logger = logging.getLogger()
 
 
 class ESLoader:
-    def __init__(self):
+    def __init__(self, index_name: str):
         self.url = os.environ.get('ELASTICSEARCH_URL')
+        self.index_name = index_name
 
     @staticmethod
     def _get_es_bulk_query(rows: List[ElasticSearchMovie], index_name: str) -> List[str]:
@@ -30,11 +31,11 @@ class ESLoader:
         return prepared_query
 
     @etl.backoff.on_exception()
-    def load_to_es(self, records: List[ElasticSearchMovie], index_name: str):
+    def load_to_es(self, records: List[ElasticSearchMovie]):
         """
         Отправка запроса в ES и разбор ошибок сохранения данных
         """
-        prepared_query = self._get_es_bulk_query(records, index_name)
+        prepared_query = self._get_es_bulk_query(records, self.index_name)
         str_query = '\n'.join(prepared_query) + '\n'
 
         response = requests.post(
