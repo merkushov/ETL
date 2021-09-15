@@ -6,7 +6,7 @@ import os
 
 import requests
 
-from etl.entities import (ElasticSearchMovie, EnhancedJSONEncoder)
+from etl.entities import (EnhancedJSONEncoder)
 import etl.backoff
 
 logger = logging.getLogger()
