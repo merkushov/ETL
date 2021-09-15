@@ -131,3 +131,59 @@ class ElasticSearchMovie:
         movie.writers_names = list(map(lambda item: item.name, movie.writers))
 
         return movie
+
+@dataclass(frozen=True)
+class MovieSmallWithPersonRole:
+    id: str
+    title: str
+    person_role: str
+
+    # TODO: вынести _get_unique_by_id отдельным методом. Отрефакторить тут и в BasicStructure
+    @classmethod
+    def _get_unique_by_id(cls, structure: list["MovieSmallWithPersonRole"]) -> list["MovieSmallWithPersonRole"]:
+        uniq = {}
+        for item in structure:
+            uniq.setdefault(item.id, item)
+
+        return list(uniq.values())
+
+@dataclass(frozen=False)
+class ElasticSearchPerson:
+    id: str
+    full_name: str
+    modified: str
+    movies: list[MovieSmallWithPersonRole] = field(default_factory=list)
+
+    @classmethod
+    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
+        """
+            Инициализирует объект данными из БД
+            Данные из БД это строки таблиц Персон и связанных сущностей (фильмов),
+            сджойненные вмесет. Содержат много дублированной информации.
+            На вход должны приходить списки с одинаковым person_id
+        """
+        obj = ElasticSearchPerson(
+            id=db_rows[0]["person_id"],
+            full_name=db_rows[0]["person_full_name"],
+            modified=db_rows[0]['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
+        )
+
+        person_map = {
+            'актёр': 'actor',
+            'директор': 'director',
+            'режисёр': 'director',
+            'сценарист': 'writer',
+        }
+
+        for row in db_rows:
+            obj.movies.append(
+                MovieSmallWithPersonRole(
+                    id=row["movie_id"],
+                    title=row["movie_title"],
+                    person_role=person_map.get(row["person_role_name"], None)
+                )
+            )
+
+        obj.movies = MovieSmallWithPersonRole._get_unique_by_id(obj.movies)
+
+        return obj

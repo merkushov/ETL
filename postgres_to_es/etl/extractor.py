@@ -74,3 +74,56 @@ class PgMovieExtractor(PgExtractor):
         cur.close()
 
         return res
+
+class PgPersonExtractor(PgExtractor):
+    """
+    Класс Экстрактор для извлечения данных о Персонах из PostgreSQL
+    """
+
+    @etl.backoff.on_exception()
+    def get_modified_ids(self, modified: str, limit: int, offset: int):
+        """
+        Метод для получения идентификаторов недавно модифицированных Персон
+        """
+        cur = self.conn.cursor()
+
+        sql = "SELECT id, modified FROM content.persons WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
+        logging.debug(sql % (modified, limit, offset))
+
+        cur.execute(sql, (modified, limit, offset))
+        res = cur.fetchall()
+
+        cur.close()
+
+        return res
+
+    @etl.backoff.on_exception(border_sleep_time=1)
+    def get_data_by_ids(self, ids: tuple):
+        """
+        Метод для получения необходимых данных по идентификаторам.
+        Жёстко связан структурой данных с etl.transformer.PGtoESPersonsTransformer
+        и etl.entities.ElasticSearchPerson
+        """
+        cur = self.conn.cursor(cursor_factory=DictCursor)
+
+        sql = """
+            SELECT
+                p.id AS person_id,
+                p.full_name AS person_full_name,
+                p.modified,
+                pr.name AS person_role_name,
+                m.id AS movie_id,
+                m.title AS movie_title
+            FROM content.persons p
+                LEFT JOIN content.movie_person_role mpr ON mpr.person_id=p.id
+                LEFT JOIN content.person_roles pr ON pr.id=mpr.person_role_id
+                LEFT JOIN content.movies m ON m.id=mpr.movie_id
+            WHERE p.id IN %s
+        """
+
+        cur.execute(sql, (ids,))
+        res = cur.fetchall()
+
+        cur.close()
+
+        return res
