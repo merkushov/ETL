@@ -6,34 +6,33 @@ import os
 from elasticsearch import Elasticsearch
 
 parser = argparse.ArgumentParser(
-    prog='init_es',
-    description='The script creates indexes in ElasticSearch according to the schema',
+    prog="init_es",
+    description="The script creates indexes in ElasticSearch according to the schema",
     allow_abbrev=False,
 )
 parser.add_argument(
-    '--indexes_path',
+    "--indexes_path",
     type=str,
-    help='The path to the system folder with indexes. The file must be in JSON format. '
-         'The file name in the folder is the name of the index',
-    default='./es_indexes'
+    help="The path to the system folder with indexes. The file must be in JSON format. "
+    "The file name in the folder is the name of the index",
+    default="./es_indexes",
 )
 parser.add_argument(
-    '-d',
-    '--delete_if_exists',
+    "-d",
+    "--delete_if_exists",
     action=argparse.BooleanOptionalAction,
-    help='Remove ElasticSearch index if exists',
+    help="Remove ElasticSearch index if exists",
     default=False,
 )
 args = parser.parse_args()
 
-logging.basicConfig(filename='logs/init_es.log', level=logging.INFO)
-es = Elasticsearch([os.environ.get('ELASTICSEARCH_URL')])
+logging.basicConfig(filename="logs/init_es.log", level=logging.INFO)
+es = Elasticsearch([os.environ.get("ELASTICSEARCH_URL")])
 
 files = [
-    (
-        os.path.join(args.indexes_path, f),
-        f
-    ) for f in os.listdir(args.indexes_path) if os.path.isfile(os.path.join(args.indexes_path, f))
+    (os.path.join(args.indexes_path, f), f)
+    for f in os.listdir(args.indexes_path)
+    if os.path.isfile(os.path.join(args.indexes_path, f))
 ]
 for path, name in files:
     index_name = name[:-5]
@@ -51,4 +50,4 @@ for path, name in files:
         if not es.indices.exists(index_name):
             logging.info('Creating "{}" index...'.format(index_name))
             es.indices.create(index=index_name, body=index_settings)
-            logging.info('Index created')
+            logging.info("Index created")

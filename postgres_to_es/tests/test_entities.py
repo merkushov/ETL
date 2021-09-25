@@ -63,6 +63,7 @@ db_rows_genres = [
     },
 ]
 
+
 def test_movies_init_by_db_rows():
     db_rows = [
         {
@@ -94,16 +95,16 @@ def test_movies_init_by_db_rows():
 
 def test_movies_init_by_db_rows_check_unique_lists():
     db_rows = [
-        { **db_rows_movies[0], **db_rows_actors[0], **db_rows_genres[0] },
-        { **db_rows_movies[0], **db_rows_directors[0], **db_rows_genres[0] },
-        { **db_rows_movies[0], **db_rows_writers[0], **db_rows_genres[0] },
-        { **db_rows_movies[0], **db_rows_actors[1], **db_rows_genres[1] },
-        { **db_rows_movies[0], **db_rows_directors[1], **db_rows_genres[1] },
-        { **db_rows_movies[0], **db_rows_writers[1], **db_rows_genres[1] },
+        {**db_rows_movies[0], **db_rows_actors[0], **db_rows_genres[0]},
+        {**db_rows_movies[0], **db_rows_directors[0], **db_rows_genres[0]},
+        {**db_rows_movies[0], **db_rows_writers[0], **db_rows_genres[0]},
+        {**db_rows_movies[0], **db_rows_actors[1], **db_rows_genres[1]},
+        {**db_rows_movies[0], **db_rows_directors[1], **db_rows_genres[1]},
+        {**db_rows_movies[0], **db_rows_writers[1], **db_rows_genres[1]},
         # дубли персон и жанров
-        { **db_rows_movies[0], **db_rows_actors[0], **db_rows_genres[1] },
-        { **db_rows_movies[0], **db_rows_directors[1], **db_rows_genres[0] },
-        { **db_rows_movies[0], **db_rows_writers[1], **db_rows_genres[1] },
+        {**db_rows_movies[0], **db_rows_actors[0], **db_rows_genres[1]},
+        {**db_rows_movies[0], **db_rows_directors[1], **db_rows_genres[0]},
+        {**db_rows_movies[0], **db_rows_writers[1], **db_rows_genres[1]},
     ]
 
     movie = ElasticSearchMovie.init_by_db_rows(db_rows)

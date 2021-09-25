@@ -18,7 +18,9 @@ class BasicStructure:
     name: str
 
     @classmethod
-    def _get_unique_by_id(cls, structure: list["BasicStructure"]) -> list["BasicStructure"]:
+    def _get_unique_by_id(
+        cls, structure: list["BasicStructure"]
+    ) -> list["BasicStructure"]:
         uniq = {}
         for item in structure:
             uniq.setdefault(item.id, item)
@@ -57,7 +59,7 @@ class ElasticSearchMovie:
     title: str
     type: str
     modified: str
-    description: str = field(default='')
+    description: str = field(default="")
     imdb_rating: float = field(default=0.0)
     genres: list = field(default_factory=list)
     actors: list[Actor] = field(default_factory=list)
@@ -70,10 +72,10 @@ class ElasticSearchMovie:
     @classmethod
     def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
         """
-            Инициализирует объект данными из БД
-            Данные из БД это строки таблиц фильмов и связанных сущностей,
-            сджойненные вмесет. Содержат много дублированной информации.
-            На вход должны приходить списки с одинаковым movie_id
+        Инициализирует объект данными из БД
+        Данные из БД это строки таблиц фильмов и связанных сущностей,
+        сджойненные вмесет. Содержат много дублированной информации.
+        На вход должны приходить списки с одинаковым movie_id
         """
         movie = ElasticSearchMovie(
             id=db_rows[0]["movie_id"],
@@ -81,19 +83,19 @@ class ElasticSearchMovie:
             description=db_rows[0]["description"],
             imdb_rating=db_rows[0]["rating"],
             type=db_rows[0]["type"],
-            modified=db_rows[0]['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
+            modified=db_rows[0]["modified"].strftime("%Y-%m-%d %H:%M:%S.%f"),
         )
 
         person_classes_map = {
-            'актёр': Actor,
-            'директор': Director,
-            'режисёр': Director,
-            'сценарист': Writer,
+            "актёр": Actor,
+            "директор": Director,
+            "режисёр": Director,
+            "сценарист": Writer,
         }
         persons_map = {
-            'Actor': movie.actors,
-            'Director': movie.directors,
-            'Writer': movie.writers,
+            "Actor": movie.actors,
+            "Director": movie.directors,
+            "Writer": movie.writers,
         }
 
         for row in db_rows:
@@ -102,23 +104,15 @@ class ElasticSearchMovie:
                 logging.error("Can't handle role type '%s'", row["person_role"])
                 next
 
-            person = person_class(
-                id=row["person_id"],
-                name=row["person_full_name"]
-            )
-            
+            person = person_class(id=row["person_id"], name=row["person_full_name"])
+
             persons_container = persons_map.get(person.__class__.__name__, None)
             if isinstance(persons_container, list):
                 persons_container.append(person)
 
-            movie.genres.append(
-                Genre(
-                    id=row["genre_id"],
-                    name=row["genre_name"]
-                )
-            )
+            movie.genres.append(Genre(id=row["genre_id"], name=row["genre_name"]))
 
-        # убираем дубли у всех сущностей        
+        # убираем дубли у всех сущностей
         movie.actors = Actor._get_unique_by_id(movie.actors)
         movie.directors = Director._get_unique_by_id(movie.directors)
         movie.writers = Writer._get_unique_by_id(movie.writers)
@@ -150,15 +144,15 @@ class ElasticSearchGenre:
     @classmethod
     def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
         """
-            Инициализирует объект данными из БД
-            Данные из БД это строки таблиц жанров и связанных сущностей (фильмов),
-            сджойненные вмесет. Содержат много дублированной информации.
-            На вход должны приходить списки с одинаковым genre_id
+        Инициализирует объект данными из БД
+        Данные из БД это строки таблиц жанров и связанных сущностей (фильмов),
+        сджойненные вмесет. Содержат много дублированной информации.
+        На вход должны приходить списки с одинаковым genre_id
         """
         genre = ElasticSearchGenre(
             id=db_rows[0]["genre_id"],
             name=db_rows[0]["genre_name"],
-            modified=db_rows[0]['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
+            modified=db_rows[0]["modified"].strftime("%Y-%m-%d %H:%M:%S.%f"),
         )
 
         for row in db_rows:
@@ -166,7 +160,7 @@ class ElasticSearchGenre:
                 MovieSmallWithIMDBRating(
                     id=row["movie_id"],
                     title=row["movie_title"],
-                    imdb_rating=row["movie_rating"]
+                    imdb_rating=row["movie_rating"],
                 )
             )
 
@@ -181,12 +175,15 @@ class MovieSmallWithPersonRole:
 
     # TODO: вынести _get_unique_by_id отдельным методом. Отрефакторить тут и в BasicStructure
     @classmethod
-    def _get_unique_by_id(cls, structure: list["MovieSmallWithPersonRole"]) -> list["MovieSmallWithPersonRole"]:
+    def _get_unique_by_id(
+        cls, structure: list["MovieSmallWithPersonRole"]
+    ) -> list["MovieSmallWithPersonRole"]:
         uniq = {}
         for item in structure:
             uniq.setdefault(item.id, item)
 
         return list(uniq.values())
+
 
 @dataclass(frozen=False)
 class ElasticSearchPerson:
@@ -198,22 +195,22 @@ class ElasticSearchPerson:
     @classmethod
     def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
         """
-            Инициализирует объект данными из БД
-            Данные из БД это строки таблиц Персон и связанных сущностей (фильмов),
-            сджойненные вмесет. Содержат много дублированной информации.
-            На вход должны приходить списки с одинаковым person_id
+        Инициализирует объект данными из БД
+        Данные из БД это строки таблиц Персон и связанных сущностей (фильмов),
+        сджойненные вмесет. Содержат много дублированной информации.
+        На вход должны приходить списки с одинаковым person_id
         """
         obj = ElasticSearchPerson(
             id=db_rows[0]["person_id"],
             full_name=db_rows[0]["person_full_name"],
-            modified=db_rows[0]['modified'].strftime("%Y-%m-%d %H:%M:%S.%f"),
+            modified=db_rows[0]["modified"].strftime("%Y-%m-%d %H:%M:%S.%f"),
         )
 
         person_map = {
-            'актёр': 'actor',
-            'директор': 'director',
-            'режисёр': 'director',
-            'сценарист': 'writer',
+            "актёр": "actor",
+            "директор": "director",
+            "режисёр": "director",
+            "сценарист": "writer",
         }
 
         for row in db_rows:
@@ -221,7 +218,7 @@ class ElasticSearchPerson:
                 MovieSmallWithPersonRole(
                     id=row["movie_id"],
                     title=row["movie_title"],
-                    person_role=person_map.get(row["person_role_name"], None)
+                    person_role=person_map.get(row["person_role_name"], None),
                 )
             )
 

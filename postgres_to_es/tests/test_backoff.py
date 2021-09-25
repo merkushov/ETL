@@ -3,7 +3,6 @@ import etl.backoff
 
 
 def test_on_exception():
-
     @etl.backoff.on_exception(border_sleep_time=1)
     def test_func(log):
         if len(log) == 0:
@@ -24,7 +23,6 @@ def test_on_exception():
 
 
 def test_on_exception_wait_till_exception():
-
     @etl.backoff.on_exception(border_sleep_time=1)
     def test_func(log):
         e = ValueError("test_func exception")

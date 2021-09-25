@@ -9,12 +9,12 @@ import etl.backoff
 class PgExtractor:
     def __init__(self):
         pg_dns = {
-            'dbname': os.environ.get('POSTGRES_DB'),
-            'user': os.environ.get('POSTGRES_USER'),
-            'password': os.environ.get('POSTGRES_PASSWORD'),
-            'host': os.environ.get('POSTGRES_HOST'),
-            'port': os.environ.get('POSTGRES_PORT'),
-            'options': '-c search_path=content',
+            "dbname": os.environ.get("POSTGRES_DB"),
+            "user": os.environ.get("POSTGRES_USER"),
+            "password": os.environ.get("POSTGRES_PASSWORD"),
+            "host": os.environ.get("POSTGRES_HOST"),
+            "port": os.environ.get("POSTGRES_PORT"),
+            "options": "-c search_path=content",
         }
         self.conn = psycopg2.connect(**pg_dns)
 
@@ -24,8 +24,8 @@ class PgExtractor:
     def get_data_by_ids():
         pass
 
+
 class PgMovieExtractor(PgExtractor):
-    
     @etl.backoff.on_exception()
     def get_modified_ids(self, modified: str, limit: int, offset: int):
         cur = self.conn.cursor()
@@ -74,7 +74,6 @@ class PgMovieExtractor(PgExtractor):
         cur.close()
 
         return res
-
 
 
 class PgGenreExtractor(PgExtractor):
@@ -128,6 +127,7 @@ class PgGenreExtractor(PgExtractor):
         cur.close()
 
         return res
+
 
 class PgPersonExtractor(PgExtractor):
     """

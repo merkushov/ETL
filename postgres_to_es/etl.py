@@ -5,12 +5,17 @@ import sys
 import time
 
 
-from etl.extractor import (PgMovieExtractor, PgGenreExtractor, PgPersonExtractor)
-from etl.transformer import (PGtoESMoviesTransformer, PGtoESGenresTransformer, PGtoESPersonsTransformer)
+from etl.extractor import PgMovieExtractor, PgGenreExtractor, PgPersonExtractor
+from etl.transformer import (
+    PGtoESMoviesTransformer,
+    PGtoESGenresTransformer,
+    PGtoESPersonsTransformer,
+)
 from etl.loader import ESLoader
 from etl.state import State, JsonFileStorage
 from etl.pipes import PipeEETBL
 from etl.settings import settings
+
 
 def main(from_date: str):
     pipes_config = [
@@ -40,7 +45,7 @@ def main(from_date: str):
             "transformer": PGtoESPersonsTransformer(source_unique_key="person_id"),
             "extractor_batch_size": 100,
             "loader_batch_size": 1000,
-        }
+        },
     ]
 
     for pipe_conf in pipes_config:
@@ -81,7 +86,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logging.basicConfig(filename="logs/etl.log", level=logging.getLevelName(args.log_level))
+    logging.basicConfig(
+        filename="logs/etl.log", level=logging.getLevelName(args.log_level)
+    )
 
     while True:
         main(from_date=args.from_date)

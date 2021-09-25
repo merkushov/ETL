@@ -17,13 +17,13 @@ class BaseStorage:
 
 
 class JsonFileStorage(BaseStorage):
-    def __init__(self, file_path: Optional[str] = './file_storage.json'):
+    def __init__(self, file_path: Optional[str] = "./file_storage.json"):
         self.file_path = file_path
 
     def save_state(self, state: dict) -> None:
         old_state = self.retrieve_state()
-        new_state = { **old_state, **state }
-        with open(self.file_path, 'w') as outfile:
+        new_state = {**old_state, **state}
+        with open(self.file_path, "w") as outfile:
             json.dump(new_state, outfile)
 
         return 1

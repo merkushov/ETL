@@ -3,16 +3,25 @@ import logging
 
 from etl.settings import settings
 
+
 def coroutine(func):
     @functools.wraps(func)
     def inner(*args, **kwargs):
         fn = func(*args, **kwargs)
         next(fn)
         return fn
+
     return inner
 
+
 # генератор, вытаскивает данные пачками, пока данные не закончатся
-def extract(target, forced_modification_date: str, batch_size=100, extractor=object, state=object):
+def extract(
+    target,
+    forced_modification_date: str,
+    batch_size=100,
+    extractor=object,
+    state=object,
+):
     if forced_modification_date:
         state.set_state("extractor.modified", forced_modification_date)
         state.set_state("offset", 0)
@@ -29,10 +38,18 @@ def extract(target, forced_modification_date: str, batch_size=100, extractor=obj
             offset = state.get_state("offset")
 
             # возвращает [(<movie_id>, <movie_modified>), ...]
-            data = extractor.get_modified_ids(modified=modified, limit=batch_size, offset=offset)
+            data = extractor.get_modified_ids(
+                modified=modified, limit=batch_size, offset=offset
+            )
 
-            logging.info("The data has been extracted. Params: modified >= %s " +
-                         "LIMIT %d OFFSET %d. Amount %d", modified, batch_size, offset, len(data))
+            logging.info(
+                "The data has been extracted. Params: modified >= %s "
+                + "LIMIT %d OFFSET %d. Amount %d",
+                modified,
+                batch_size,
+                offset,
+                len(data),
+            )
 
             if data:
                 last_modified = state.get_state("extractor.modified")
@@ -44,7 +61,7 @@ def extract(target, forced_modification_date: str, batch_size=100, extractor=obj
 
                 state.set_state(
                     "extractor.modified",
-                    str(data[-1][1].strftime("%Y-%m-%d %H:%M:%S.%f"))
+                    str(data[-1][1].strftime("%Y-%m-%d %H:%M:%S.%f")),
                 )
 
             target.send(tuple(map(lambda item: item[0], data)))
@@ -58,7 +75,9 @@ def enrich(target, extractor=object):
         while ids := (yield):
             data = extractor.get_data_by_ids(ids)
 
-            logging.info("The data has been enriched. Number of rows received %d", len(data))
+            logging.info(
+                "The data has been enriched. Number of rows received %d", len(data)
+            )
 
             target.send(data)
     except StopIteration:
@@ -70,7 +89,11 @@ def transform(target, transformer: object):
     while raw_data := (yield):
         transformed_objects = transformer.transform(raw_data)
 
-        logging.info("Transformed %d sql rows into %d objects", len(raw_data), len(transformed_objects))
+        logging.info(
+            "Transformed %d sql rows into %d objects",
+            len(raw_data),
+            len(transformed_objects),
+        )
 
         target.send(transformed_objects)
 
@@ -86,8 +109,11 @@ def build_buffer():
                 upload_buffer += data
 
             if len(upload_buffer) >= batch_size:
-                logging.info("The buffer for %d elements has been successfully formed. " +
-                             "The data will be transferred further along the pipeline. ", len(upload_buffer))
+                logging.info(
+                    "The buffer for %d elements has been successfully formed. "
+                    + "The data will be transferred further along the pipeline. ",
+                    len(upload_buffer),
+                )
                 target.send(upload_buffer)
                 upload_buffer = []
 
@@ -97,7 +123,9 @@ def build_buffer():
 @coroutine
 def load(loader=object, state=object):
     while dataclasses_objects := (yield):
-        logging.info("%d records will be uploaded to ElasticSearch", len(dataclasses_objects))
+        logging.info(
+            "%d records will be uploaded to ElasticSearch", len(dataclasses_objects)
+        )
 
         res = loader.load_to_es(dataclasses_objects)
         if not res:
@@ -117,7 +145,17 @@ class PipeEETBL:
       - buffer - буферизовать поступающие данные
       - load - отправить данные в Приёмник
     """
-    def __init__(self, label: str, extractor: object, loader: object, transformer: object, states_keeper: object, extractor_batch_size=100, loader_batch_size=1000):
+
+    def __init__(
+        self,
+        label: str,
+        extractor: object,
+        loader: object,
+        transformer: object,
+        states_keeper: object,
+        extractor_batch_size=100,
+        loader_batch_size=1000,
+    ):
         self.label = label
         self.extractor = extractor
         self.loader = loader
@@ -158,11 +196,7 @@ class PipeEETBL:
         # доборный pipe - проталкивает в ES то что осталось в буфере
         try:
             pipe_tail = buffer(
-                load(
-                    loader=self.loader,
-                    state=self.states_keeper
-                ),
-                batch_size=1
+                load(loader=self.loader, state=self.states_keeper), batch_size=1
             )
             pipe_tail.send(1)
         except StopIteration:

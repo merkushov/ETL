@@ -1,4 +1,5 @@
-from etl.entities import (ElasticSearchMovie, ElasticSearchGenre, ElasticSearchPerson)
+from etl.entities import ElasticSearchMovie, ElasticSearchGenre, ElasticSearchPerson
+
 
 class ETLTransformer:
     def __init__(self, source_unique_key: str):
@@ -18,7 +19,7 @@ class PGtoESMoviesTransformer(ETLTransformer):
 
         unique_objects = list()
         for db_rows in db_rows_by_movie_ids.values():
-            unique_objects.append( ElasticSearchMovie.init_by_db_rows(list(db_rows)) )
+            unique_objects.append(ElasticSearchMovie.init_by_db_rows(list(db_rows)))
 
         return unique_objects
 
@@ -33,7 +34,7 @@ class PGtoESGenresTransformer(ETLTransformer):
 
         unique_objects = list()
         for db_rows in db_rows_by_genre_ids.values():
-            unique_objects.append( ElasticSearchGenre.init_by_db_rows(list(db_rows)) )
+            unique_objects.append(ElasticSearchGenre.init_by_db_rows(list(db_rows)))
 
         return unique_objects
 
@@ -48,6 +49,6 @@ class PGtoESPersonsTransformer(ETLTransformer):
 
         unique_objects = list()
         for db_rows in db_rows_by_genre_ids.values():
-            unique_objects.append( ElasticSearchPerson.init_by_db_rows(list(db_rows)) )
+            unique_objects.append(ElasticSearchPerson.init_by_db_rows(list(db_rows)))
 
         return unique_objects
