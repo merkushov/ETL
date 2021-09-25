@@ -173,7 +173,8 @@ class MovieSmallWithPersonRole:
     title: str
     person_role: str
 
-    # TODO: вынести _get_unique_by_id отдельным методом. Отрефакторить тут и в BasicStructure
+    # TODO: вынести _get_unique_by_id отдельным методом. Отрефакторить тут
+    #       и в BasicStructure
     @classmethod
     def _get_unique_by_id(
         cls, structure: list["MovieSmallWithPersonRole"]

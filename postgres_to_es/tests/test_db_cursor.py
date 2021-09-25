@@ -1,7 +1,6 @@
 import os
 
 import psycopg2
-import pytest
 
 
 def test_close_cursor():

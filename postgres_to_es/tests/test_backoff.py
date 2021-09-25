@@ -30,7 +30,7 @@ def test_on_exception_wait_till_exception():
         raise e
 
     log = []
-    with pytest.raises(ValueError, match=r"test_func exception") as exception:
+    with pytest.raises(ValueError, match=r"test_func exception"):
         test_func(log)
 
     # assert str(exception) == "test_func exception"

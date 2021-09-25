@@ -35,6 +35,10 @@ code/isort:		## сортировка строк импорта
 	@isort postgres_to_es
 .PHONY: code/isort
 
+code/style:		## проверка стиля кода
+	@flake8 --max-line-length 88 postgres_to_es/
+.PHONY: code/style
+
 # настройка .env переменных dev окружения
 dev_env:
 	@cp .env.example .env

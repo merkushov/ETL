@@ -30,7 +30,17 @@ class PgMovieExtractor(PgExtractor):
     def get_modified_ids(self, modified: str, limit: int, offset: int):
         cur = self.conn.cursor()
 
-        sql = "SELECT id, modified FROM content.movies WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
+        sql = """
+            SELECT
+                id, modified
+            FROM
+                content.movies
+            WHERE
+                modified >= %s
+            ORDER BY modified
+            LIMIT %s
+            OFFSET %s
+        """
         logging.debug(sql % (modified, limit, offset))
 
         cur.execute(sql, (modified, limit, offset))
@@ -88,7 +98,17 @@ class PgGenreExtractor(PgExtractor):
         """
         cur = self.conn.cursor()
 
-        sql = "SELECT id, modified FROM content.genres WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
+        sql = """
+            SELECT
+                id, modified
+            FROM
+                content.genres
+            WHERE
+                modified >= %s
+            ORDER BY modified
+            LIMIT %s
+            OFFSET %s
+        """
         logging.debug(sql % (modified, limit, offset))
 
         cur.execute(sql, (modified, limit, offset))
@@ -141,7 +161,17 @@ class PgPersonExtractor(PgExtractor):
         """
         cur = self.conn.cursor()
 
-        sql = "SELECT id, modified FROM content.persons WHERE modified >= %s ORDER BY modified LIMIT %s OFFSET %s"
+        sql = """
+            SELECT
+                id, modified
+            FROM
+                content.persons
+            WHERE
+                modified >= %s
+            ORDER BY modified
+            LIMIT %s
+            OFFSET %s
+        """
         logging.debug(sql % (modified, limit, offset))
 
         cur.execute(sql, (modified, limit, offset))

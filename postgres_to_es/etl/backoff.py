@@ -39,7 +39,8 @@ def on_exception(start_sleep_time=0.1, factor=2, border_sleep_time=10, logger=_l
                         raise exception
 
                     logger.info(
-                        "The exception is caught. Repeated execution of the '%s' function"
+                        "The exception is caught. Repeated execution "
+                        "of the '%s' function"
                         "will be backed off by %f seconds.",
                         func.__name__,
                         sleep_time,
