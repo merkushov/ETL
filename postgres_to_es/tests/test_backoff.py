@@ -1,5 +1,5 @@
-import pytest
 import etl.backoff
+import pytest
 
 
 def test_on_exception():

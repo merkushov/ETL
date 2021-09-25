@@ -4,17 +4,13 @@ import signal
 import sys
 import time
 
-
-from etl.extractor import PgMovieExtractor, PgGenreExtractor, PgPersonExtractor
-from etl.transformer import (
-    PGtoESMoviesTransformer,
-    PGtoESGenresTransformer,
-    PGtoESPersonsTransformer,
-)
+from etl.extractor import PgGenreExtractor, PgMovieExtractor, PgPersonExtractor
 from etl.loader import ESLoader
-from etl.state import State, JsonFileStorage
 from etl.pipes import PipeEETBL
 from etl.settings import settings
+from etl.state import JsonFileStorage, State
+from etl.transformer import (PGtoESGenresTransformer, PGtoESMoviesTransformer,
+                             PGtoESPersonsTransformer)
 
 
 def main(from_date: str):

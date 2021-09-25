@@ -1,7 +1,7 @@
-from datetime import datetime
 import logging
-import pytest
+from datetime import datetime
 
+import pytest
 from etl.entities import ElasticSearchMovie, Person
 
 logger = logging.getLogger()

@@ -1,13 +1,12 @@
-from typing import List
-from urllib.parse import urljoin
 import json
 import logging
 import os
+from typing import List
+from urllib.parse import urljoin
 
-import requests
-
-from etl.entities import EnhancedJSONEncoder
 import etl.backoff
+import requests
+from etl.entities import EnhancedJSONEncoder
 
 logger = logging.getLogger()
 

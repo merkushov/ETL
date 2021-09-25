@@ -26,9 +26,14 @@ help:	## список доступных команд
 #
 # Работа с кодом
 #
-code/formatter: 	## принудительное форматирование кода по принятым стандартам
+
+code/format: 	## принудительное форматирование кода по принятым стандартам
 	@black postgres_to_es/
-.PHONY: code/formatter
+.PHONY: code/format
+
+code/isort:		## сортировка строк импорта
+	@isort postgres_to_es
+.PHONY: code/isort
 
 # настройка .env переменных dev окружения
 dev_env:
