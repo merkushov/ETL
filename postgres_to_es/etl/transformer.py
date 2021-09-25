@@ -1,5 +1,4 @@
-from etl.entities import (ElasticSearchGenre, ElasticSearchMovie,
-                          ElasticSearchPerson)
+from etl.entities import ElasticSearchGenre, ElasticSearchMovie, ElasticSearchPerson
 
 
 class ETLTransformer:

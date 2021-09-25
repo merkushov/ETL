@@ -32,7 +32,7 @@ code/format: 	## принудительное форматирование ко�
 .PHONY: code/format
 
 code/isort:		## сортировка строк импорта
-	@isort postgres_to_es
+	@isort --profile black postgres_to_es
 .PHONY: code/isort
 
 code/style:		## проверка стиля кода

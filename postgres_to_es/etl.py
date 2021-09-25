@@ -9,8 +9,11 @@ from etl.loader import ESLoader
 from etl.pipes import PipeEETBL
 from etl.settings import settings
 from etl.state import JsonFileStorage, State
-from etl.transformer import (PGtoESGenresTransformer, PGtoESMoviesTransformer,
-                             PGtoESPersonsTransformer)
+from etl.transformer import (
+    PGtoESGenresTransformer,
+    PGtoESMoviesTransformer,
+    PGtoESPersonsTransformer,
+)
 
 
 def main(from_date: str):
