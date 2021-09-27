@@ -76,9 +76,13 @@ services:
     build:
       context: ./postgres_to_es
       dockerfile: Dockerfile
+      args:
+        uid: ${HOST_UID}
+        gid: ${HOST_GID}
     container_name: yandex_p_etl
+    user: "devuser"
     command: tail -f /dev/null
-#    command: python3 etl.py
+    # command: python3 etl.py
     env_file:
       - ./postgres_to_es/.env
     restart: always

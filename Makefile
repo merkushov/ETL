@@ -39,6 +39,10 @@ code/style:		## проверка стиля кода
 	@flake8 --max-line-length 88 postgres_to_es/
 .PHONY: code/style
 
+code: code/format	code/isort code/style	## статический анализ кода и авто-исправления по принятым в проекте стандартам
+.PHONY: code
+
+
 # настройка .env переменных dev окружения
 dev_env:
 	@cp .env.example .env
@@ -47,6 +51,10 @@ dev_env:
 	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`
 	# сгенерировать рандомный пароль для суперпользователя в Django
 	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`
+	# установить HOST_UID = UID текущего пользователя. Это влияет на UID пользователя внутри контейнера.
+	# Нужно для совместимости прав доступа к сгенерированным файлам у хостового пользователя
+	`id -u | xargs -i sed -i 's/HOST_UID=.*/HOST_UID={}/' .env`
+	`id -g | xargs -i sed -i 's/HOST_GID=.*/HOST_GID={}/' .env`
 
 dev_setup:	## развернуть Приложение для разработки (запускать один раз)
 	@make dev_env
@@ -94,6 +102,9 @@ app/fake_data:	## загрузить фейковых данных для тес
 docker/up:	## поднять Докер
 	$(DOCKER_COMPOSE) up -d
 .PHONY: docker/up
+
+docker/start: docker/up 	## алиас для docker/up
+.PHONY: docker/start
 
 docker/stop:	## остановить все контейнеры Приложения
 	$(DOCKER_COMPOSE) stop
