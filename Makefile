@@ -1,3 +1,5 @@
+include .env
+
 # silent by default
 ifndef VERBOSE
 .SILENT:
@@ -139,7 +141,7 @@ db/log:		## посмотреть логи контейнера БД
 .PHONY: db/log
 
 db/psql:		## интерактивный терминал PostgreSQL
-	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U postgres movie_catalog
+	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U ${POSTGRES_USER} ${POSTGRES_DB}
 .PHONY: db/psql
 
 db/waiting_for_readiness:
