@@ -4,8 +4,9 @@ import os
 from typing import List
 from urllib.parse import urljoin
 
-import etl.backoff
 import requests
+
+import etl.backoff
 from etl.entities import EnhancedJSONEncoder
 
 logger = logging.getLogger()
