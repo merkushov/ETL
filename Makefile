@@ -30,15 +30,15 @@ help:	## список доступных команд
 #
 
 code/format: 	## принудительное форматирование кода по принятым стандартам
-	@black postgres_to_es/
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) black ./
 .PHONY: code/format
 
 code/isort:		## сортировка строк импорта
-	@isort --profile black postgres_to_es
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) isort --profile black ./
 .PHONY: code/isort
 
 code/style:		## проверка стиля кода
-	@flake8 --max-line-length 88 postgres_to_es/
+	$(DOCKER_COMPOSE) exec $(DOCKER_ETL) flake8 --max-line-length 88 ./
 .PHONY: code/style
 
 code: code/format	code/isort code/style	## статический анализ кода и авто-исправления по принятым в проекте стандартам
