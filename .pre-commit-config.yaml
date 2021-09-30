@@ -1,0 +1,29 @@
+---
+exclude: '.git|.vscode|.idea'
+default_stages: [commit]
+fail_fast: true
+
+repos:
+  - repo: local
+    hooks:
+      # black
+      - id: formatting_check
+        name: formatting_check
+        description: "python formatting check"
+        entry: make code/format_check
+        verbose: true
+        language: system
+      # isort
+      - id: isort_check
+        name: isort_check
+        description: "checking the style of writing module imports"
+        entry: make code/isort_check
+        verbose: true
+        language: system
+      # flake8
+      - id: code_style
+        name: code_style
+        description: "python linter for verifying code quality"
+        entry: make code/style
+        verbose: true
+        language: system
