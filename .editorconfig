@@ -1,4 +1,7 @@
 # http://editorconfig.org
+# Plugins:
+#  - vim - https://github.com/editorconfig/editorconfig-vim#readme
+#  - VSCode - https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig
 
 root = true
 
