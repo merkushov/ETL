@@ -7,18 +7,20 @@ from urllib.parse import urljoin
 import requests
 
 import etl.backoff
-from etl.entities import EnhancedJSONEncoder
+from etl.entities import ElasticSearchEnityType, EnhancedJSONEncoder
 
 logger = logging.getLogger()
 
 
 class ESLoader:
     def __init__(self, index_name: str):
-        self.url = os.environ.get("ELASTICSEARCH_URL")
+        self.url = os.environ.get("ELASTICSEARCH_URL", "")
         self.index_name = index_name
 
     @staticmethod
-    def _get_es_bulk_query(rows: List[object], index_name: str) -> List[str]:
+    def _get_es_bulk_query(
+        rows: List[ElasticSearchEnityType], index_name: str
+    ) -> List[str]:
         """
         Подготавливает bulk-запрос в Elasticsearch
         """
@@ -33,7 +35,7 @@ class ESLoader:
         return prepared_query
 
     @etl.backoff.on_exception()
-    def load_to_es(self, records: List[object]):
+    def load_to_es(self, records: List[ElasticSearchEnityType]):
         """
         Отправка запроса в ES и разбор ошибок сохранения данных
         """

@@ -2,6 +2,11 @@ import dataclasses
 import json
 import logging
 from dataclasses import dataclass, field
+from typing import Any, Union
+
+# TODO: попытка прокинуть "универсальный" тип в loader.py
+#       Нужно придумать что-то более элегантное для удовлетворения pyright
+ElasticSearchEnityType = Union["BasicStructure", "ElasticSearchMovie"]
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -18,9 +23,7 @@ class BasicStructure:
     name: str
 
     @classmethod
-    def _get_unique_by_id(
-        cls, structure: list["BasicStructure"]
-    ) -> list["BasicStructure"]:
+    def _get_unique_by_id(cls, structure: list[Any]) -> list[Any]:
         uniq = {}
         for item in structure:
             uniq.setdefault(item.id, item)
@@ -30,22 +33,30 @@ class BasicStructure:
 
 @dataclass(frozen=True)
 class Person(BasicStructure):
-    pass
+    @classmethod
+    def _get_unique_by_id(cls, structure: list[Any]) -> list[Any]:
+        return super()._get_unique_by_id(structure)
 
 
 @dataclass(frozen=True)
 class Actor(Person):
-    pass
+    @classmethod
+    def _get_unique_by_id(cls, structure: list["Actor"]) -> list["Actor"]:
+        return super()._get_unique_by_id(structure)
 
 
 @dataclass(frozen=True)
 class Director(Person):
-    pass
+    @classmethod
+    def _get_unique_by_id(cls, structure: list["Director"]) -> list["Director"]:
+        return super()._get_unique_by_id(structure)
 
 
 @dataclass(frozen=True)
 class Writer(Person):
-    pass
+    @classmethod
+    def _get_unique_by_id(cls, structure: list["Writer"]) -> list["Writer"]:
+        return super()._get_unique_by_id(structure)
 
 
 @dataclass(frozen=True)
@@ -142,7 +153,7 @@ class ElasticSearchGenre:
     movies: list[MovieSmallWithIMDBRating] = field(default_factory=list)
 
     @classmethod
-    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
+    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchGenre":
         """
         Инициализирует объект данными из БД
         Данные из БД это строки таблиц жанров и связанных сущностей (фильмов),
@@ -194,7 +205,7 @@ class ElasticSearchPerson:
     movies: list[MovieSmallWithPersonRole] = field(default_factory=list)
 
     @classmethod
-    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchMovie":
+    def init_by_db_rows(cls, db_rows: list) -> "ElasticSearchPerson":
         """
         Инициализирует объект данными из БД
         Данные из БД это строки таблиц Персон и связанных сущностей (фильмов),
@@ -219,7 +230,7 @@ class ElasticSearchPerson:
                 MovieSmallWithPersonRole(
                     id=row["movie_id"],
                     title=row["movie_title"],
-                    person_role=person_map.get(row["person_role_name"], None),
+                    person_role=str(person_map.get(row["person_role_name"], None)),
                 )
             )
 

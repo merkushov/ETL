@@ -23,15 +23,15 @@ class JsonFileStorage(BaseStorage):
     def save_state(self, state: dict) -> None:
         old_state = self.retrieve_state()
         new_state = {**old_state, **state}
-        with open(self.file_path, "w") as outfile:
+        with open(str(self.file_path), "w") as outfile:
             json.dump(new_state, outfile)
 
-        return 1
+        return
 
     def retrieve_state(self) -> dict:
         data = {}
-        if os.path.isfile(self.file_path):
-            with open(self.file_path) as json_file:
+        if os.path.isfile(str(self.file_path)):
+            with open(str(self.file_path), "r") as json_file:
                 data = json.load(json_file)
 
         return data

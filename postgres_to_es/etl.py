@@ -58,7 +58,11 @@ def main(from_date: str):
 
 
 def sigcatch(signum, frame):
-    logging.info("A shutdown signal (%s) was caught. Shutting down...", signum)
+    logging.info(
+        "A shutdown signal (%s) was caught in frame (%s). Shutting down...",
+        signum,
+        frame,
+    )
     sys.exit()
 
 

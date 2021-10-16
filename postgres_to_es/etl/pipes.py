@@ -2,6 +2,7 @@ import functools
 import logging
 
 from etl.settings import settings
+from etl.transformer import ETLTransformer
 
 
 def coroutine(func):
@@ -85,7 +86,7 @@ def enrich(target, extractor=object):
 
 
 @coroutine
-def transform(target, transformer: object):
+def transform(target, transformer: ETLTransformer):
     while raw_data := (yield):
         transformed_objects = transformer.transform(raw_data)
 
@@ -151,7 +152,7 @@ class PipeEETBL:
         label: str,
         extractor: object,
         loader: object,
-        transformer: object,
+        transformer: ETLTransformer,
         states_keeper: object,
         extractor_batch_size=100,
         loader_batch_size=1000,
@@ -194,11 +195,12 @@ class PipeEETBL:
             logging.debug("Done. The pipeline has run out of data.")
 
         # доборный pipe - проталкивает в ES то что осталось в буфере
+        pipe_tail = buffer(
+            load(loader=self.loader, state=self.states_keeper), batch_size=1
+        )
+
         try:
-            pipe_tail = buffer(
-                load(loader=self.loader, state=self.states_keeper), batch_size=1
-            )
-            pipe_tail.send(1)
+            pipe_tail.send(None)
         except StopIteration:
             logging.debug("Done. Additional pipeline has run out of data.")
         finally:

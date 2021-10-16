@@ -19,10 +19,10 @@ class PgExtractor:
         }
         self.conn = psycopg2.connect(**pg_dns)
 
-    def get_modified_ids():
+    def get_modified_ids(self):
         pass
 
-    def get_data_by_ids():
+    def get_data_by_ids(self):
         pass
 
 

@@ -5,8 +5,8 @@ class ETLTransformer:
     def __init__(self, source_unique_key: str):
         self.source_unique_key = source_unique_key
 
-    def transform(self):
-        pass
+    def transform(self, db_raw_data: list):
+        return db_raw_data
 
 
 class PGtoESMoviesTransformer(ETLTransformer):
