@@ -40,14 +40,14 @@ for path, name in files:
         index_settings = json.load(file)
 
     if index_name and index_settings:
-        if es.indices.exists(index_name):
+        if es.indices.exists(index=index_name):
             if args.delete_if_exists:
-                es.indices.delete(index_name)
+                es.indices.delete(index=index_name)
                 logging.info('"{}" index has been deleted'.format(index_name))
             else:
                 logging.info('Index "{}" already created'.format(index_name))
 
-        if not es.indices.exists(index_name):
+        if not es.indices.exists(index=index_name):
             logging.info('Creating "{}" index...'.format(index_name))
             es.indices.create(index=index_name, body=index_settings)
             logging.info("Index created")

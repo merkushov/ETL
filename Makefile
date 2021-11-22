@@ -1,4 +1,4 @@
-include .env
+# include .env
 
 # silent by default
 ifndef VERBOSE
@@ -197,6 +197,10 @@ etl/pipe:	## запустить pipe перекачки данных из Pg в 
 #
 # ElasticSearch
 #
+
+es/bash:	## доступ в контейнер с ElasticSearch
+	$(DOCKER_COMPOSE) exec $(DOCKER_ES) bash
+.PHONY: es/bash
 
 es/waiting_for_readiness:
 	$(DOCKER_COMPOSE) exec $(DOCKER_ES) bash -c 'until curl --silent --output /dev/null http://localhost:9200/_cat/health?h=st; do printf "."; sleep 3; done; echo "ES ready."'
