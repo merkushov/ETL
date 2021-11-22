@@ -14,6 +14,10 @@ ENV PATH="/home/devuser/.local/bin:${PATH}"
 
 RUN apt-get update
 RUN apt-get install -y gcc musl-dev libpq-dev
+RUN apt-get install -y vim make curl git tree jq
+
+RUN mkdir /usr/src/postgres_to_es
+RUN chown -R devuser:devuser /usr/src/postgres_to_es
 
 USER devuser
 
@@ -24,3 +28,4 @@ RUN pip install --upgrade pip
 RUN pip install -r ./requirements.txt
 
 COPY --chown=devuser:devuser . .
+
