@@ -50,7 +50,6 @@ class ESLoader:
         )
 
         json_response = json.loads(response.content.decode())
-        logging.debug(json_response)
 
         success = True
         for item in json_response.get("items", []):

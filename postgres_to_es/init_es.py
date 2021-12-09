@@ -49,5 +49,9 @@ for path, name in files:
 
         if not es.indices.exists(index=index_name):
             logging.info('Creating "{}" index...'.format(index_name))
-            es.indices.create(index=index_name, body=index_settings)
+            es.indices.create(
+                index=index_name,
+                settings=index_settings["settings"],
+                mappings=index_settings["mappings"]
+            )
             logging.info("Index created")
