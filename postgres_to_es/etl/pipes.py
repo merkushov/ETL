@@ -105,7 +105,9 @@ def build_buffer():
     @coroutine
     def buffer(target, batch_size=1000):
         nonlocal upload_buffer
-        while data := (yield):
+        while True:
+            data = (yield)
+
             if data and isinstance(data, list):
                 upload_buffer += data
 
