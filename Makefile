@@ -132,7 +132,7 @@ docker/destroy: 	## остановить/удалить контейнеры и 
 .PHONY: docker/destroy
 
 docker/build:
-	$(DOCKER_COMPOSE) build --no-cache --force-rm
+	$(DOCKER_COMPOSE) build
 .PHONY: docker/build
 
 docker/status:
@@ -203,4 +203,4 @@ es/bash:	## доступ в контейнер с ElasticSearch
 .PHONY: es/bash
 
 es/waiting_for_readiness:
-	$(DOCKER_COMPOSE) exec $(DOCKER_ES) bash -c 'until curl --silent --output /dev/null http://localhost:9200/_cat/health?h=st; do printf "."; sleep 3; done; echo "ES ready."'
+	$(DOCKER_COMPOSE) exec $(DOCKER_ES) bash -c 'until curl --silent --output /dev/null http://localhost:9200/_cat/health?h=st; do printf "."; sleep 5; done; echo "ES ready."'
