@@ -1,5 +1,3 @@
-# include .env
-
 # silent by default
 ifndef VERBOSE
 .SILENT:
@@ -19,11 +17,13 @@ DOCKER_NGINX=nginx
 DOCKER_ES=es
 DOCKER_ETL=etl
 
+OS := $(shell uname)
 .DEFAULT_GOAL := help
 
 help:	## список доступных команд
 	@grep -E '^[a-zA-Z0-9_\-\/]+:.*?## .*$$' Makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 	@echo "(Other less used targets are available, open Makefile for details)"
+.PHONY: help
 
 #
 # Работа с кодом
@@ -60,14 +60,29 @@ code: code/format	code/isort code/style	## статический анализ �
 dev_env:
 	@cp .env.example .env
 	@cp postgres_to_es/.env.example postgres_to_es/.env
+
 	# сгенерировать рандомные пароли для PostgreSQL
-	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`
 	# сгенерировать рандомный пароль для суперпользователя в Django
-	`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`
 	# установить HOST_UID = UID текущего пользователя. Это влияет на UID пользователя внутри контейнера.
 	# Нужно для совместимости прав доступа к сгенерированным файлам у хостового пользователя
-	`id -u | xargs -i sed -i 's/HOST_UID=.*/HOST_UID={}/' .env`
-	`id -g | xargs -i sed -i 's/HOST_GID=.*/HOST_GID={}/' .env`
+
+	@if [[ $(OS) = 'Darwin' ]]; then \
+		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -I '{}' sed -i '' 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
+		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -I '{}' sed -i '' 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
+		`id -u | xargs -I '{}' sed -i '' 's/HOST_UID=.*/HOST_UID={}/' .env`; \
+		`sed -i '' 's/HOST_GID=.*/HOST_GID=61/' .env`; \
+	elif [[ $(OS) = 'Windows_NT' ]]; then \
+		`env LC_CTYPE=C cat /dev/urandom | tr -dc "a-zA-Z0-9" | head -c 42 | xargs -I '{}' sed -i -e 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
+		`env LC_CTYPE=C cat /dev/urandom | tr -dc "a-zA-Z0-9" | head -c 10 | xargs -I '{}' sed -i -e 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
+		`id -u | xargs -I '{}' sed -i -e 's/HOST_UID=.*/HOST_UID={}/' .env`; \
+		`id -g | xargs -I '{}' sed -i -e 's/HOST_GID=.*/HOST_GID={}/' .env`; \
+	else \
+		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
+		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
+		`id -u | xargs -i sed -i 's/HOST_UID=.*/HOST_UID={}/' .env`; \
+		`id -g | xargs -i sed -i 's/HOST_GID=.*/HOST_GID={}/' .env`; \
+	fi
+.PHONY: dev_env
 
 dev_setup:	## развернуть Приложение для разработки (запускать один раз)
 	@make dev_env
