@@ -11,9 +11,6 @@ endif
 
 DOCKER_COMPOSE=docker-compose $(DOCKER_COMPOSE_FILE)
 
-DOCKER_APP=app
-DOCKER_DB=db
-DOCKER_NGINX=nginx
 DOCKER_ES=es
 DOCKER_ETL=etl
 
@@ -93,34 +90,6 @@ dev_setup:	## развернуть Приложение для разработ�
 .PHONY: dev_setup
 
 #
-# Приложение
-#
-
-#app/init:	## инициализация Приложения
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py migrate --noinput
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py createsuperuser --noinput
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py compilemessages
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py collectstatic --no-input --clear
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py loaddata test_data.json
-#.PHONY: app/init
-#
-#app/bash:		## доступ в контейнер с Django
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) bash
-#.PHONY: app/bash
-#
-#app/log:	## посмотреть логи контейнера Приложения
-#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_APP)
-#.PHONY: app/log
-#
-#app/test:	## test
-#	@echo $(STAGE)
-#.PHONY: app/test
-#
-#app/fake_data:	## загрузить фейковых данных для тестирования
-#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py fake_data --count_genres 100 --count_persons 3000 --count_movies 20000
-#.PHONY: app/fake_data
-
-#
 # Докер
 #
 
@@ -150,37 +119,6 @@ docker/build:
 docker/status:
 	$(DOCKER_COMPOSE) ps
 .PHONY: docker/status
-
-#
-# База данных
-#
-
-#db/bash:		## доступ в контейнер с БД
-#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash
-#.PHONY: db/bash
-#
-#db/log:		## посмотреть логи контейнера БД
-#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_DB)
-#.PHONY: db/log
-#
-#db/psql:		## интерактивный терминал PostgreSQL
-#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U ${POSTGRES_USER} ${POSTGRES_DB}
-#.PHONY: db/psql
-#
-#db/waiting_for_readiness:
-#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash -c 'until pg_isready 2>/dev/null; do sleep 1 ; done; echo "Database ready."'
-
-#
-# Nginx
-#
-
-#nginx/bash:		## доступ в контейнер c Nginx
-#	$(DOCKER_COMPOSE) exec $(DOCKER_NGINX) bash
-#.PHONY: nginx/bash
-#
-#nginx/log:		## посмотреть логи контейнера Nginx
-#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_NGINX)
-#.PHONY: nginx/log
 
 #
 # ETL - Сервис по перекачиванию данных из PostgreSQL в ElasticSearch
