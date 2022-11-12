@@ -67,17 +67,14 @@ dev_env:
 	# Нужно для совместимости прав доступа к сгенерированным файлам у хостового пользователя
 
 	@if [[ $(OS) = 'Darwin' ]]; then \
-		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -I '{}' sed -i '' 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
 		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -I '{}' sed -i '' 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
 		`id -u | xargs -I '{}' sed -i '' 's/HOST_UID=.*/HOST_UID={}/' .env`; \
 		`sed -i '' 's/HOST_GID=.*/HOST_GID=61/' .env`; \
 	elif [[ $(OS) = 'Windows_NT' ]]; then \
-		`env LC_CTYPE=C cat /dev/urandom | tr -dc "a-zA-Z0-9" | head -c 42 | xargs -I '{}' sed -i -e 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
 		`env LC_CTYPE=C cat /dev/urandom | tr -dc "a-zA-Z0-9" | head -c 10 | xargs -I '{}' sed -i -e 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
 		`id -u | xargs -I '{}' sed -i -e 's/HOST_UID=.*/HOST_UID={}/' .env`; \
 		`id -g | xargs -I '{}' sed -i -e 's/HOST_GID=.*/HOST_GID={}/' .env`; \
 	else \
-		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 42 | xargs -i sed -i 's/POSTGRES_PASSWORD=[a-zA-Z0-9]*/POSTGRES_PASSWORD={}/' .env postgres_to_es/.env`; \
 		`env LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 10 | xargs -i sed -i 's/DJANGO_SUPERUSER_PASSWORD=[a-zA-Z0-9]*/DJANGO_SUPERUSER_PASSWORD={}/' .env`; \
 		`id -u | xargs -i sed -i 's/HOST_UID=.*/HOST_UID={}/' .env`; \
 		`id -g | xargs -i sed -i 's/HOST_GID=.*/HOST_GID={}/' .env`; \
@@ -89,8 +86,8 @@ dev_setup:	## развернуть Приложение для разработ�
 	@make docker/destroy
 	@make docker/build
 	@make docker/up
-	@make db/waiting_for_readiness
-	@make app/init
+	#@make db/waiting_for_readiness
+	#@make app/init
 	@make es/waiting_for_readiness
 	@make etl/init
 .PHONY: dev_setup
@@ -99,29 +96,29 @@ dev_setup:	## развернуть Приложение для разработ�
 # Приложение
 #
 
-app/init:	## инициализация Приложения
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py migrate --noinput
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py createsuperuser --noinput
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py compilemessages
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py collectstatic --no-input --clear
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py loaddata test_data.json
-.PHONY: app/init
-
-app/bash:		## доступ в контейнер с Django
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) bash
-.PHONY: app/bash
-
-app/log:	## посмотреть логи контейнера Приложения
-	$(DOCKER_COMPOSE) logs --follow $(DOCKER_APP)
-.PHONY: app/log
-
-app/test:	## test
-	@echo $(STAGE)
-.PHONY: app/test
-
-app/fake_data:	## загрузить фейковых данных для тестирования
-	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py fake_data --count_genres 100 --count_persons 3000 --count_movies 20000
-.PHONY: app/fake_data
+#app/init:	## инициализация Приложения
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py migrate --noinput
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py createsuperuser --noinput
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py compilemessages
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py collectstatic --no-input --clear
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py loaddata test_data.json
+#.PHONY: app/init
+#
+#app/bash:		## доступ в контейнер с Django
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) bash
+#.PHONY: app/bash
+#
+#app/log:	## посмотреть логи контейнера Приложения
+#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_APP)
+#.PHONY: app/log
+#
+#app/test:	## test
+#	@echo $(STAGE)
+#.PHONY: app/test
+#
+#app/fake_data:	## загрузить фейковых данных для тестирования
+#	$(DOCKER_COMPOSE) exec $(DOCKER_APP) python manage.py fake_data --count_genres 100 --count_persons 3000 --count_movies 20000
+#.PHONY: app/fake_data
 
 #
 # Докер
@@ -158,32 +155,32 @@ docker/status:
 # База данных
 #
 
-db/bash:		## доступ в контейнер с БД
-	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash
-.PHONY: db/bash
-
-db/log:		## посмотреть логи контейнера БД
-	$(DOCKER_COMPOSE) logs --follow $(DOCKER_DB)
-.PHONY: db/log
-
-db/psql:		## интерактивный терминал PostgreSQL
-	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U ${POSTGRES_USER} ${POSTGRES_DB}
-.PHONY: db/psql
-
-db/waiting_for_readiness:
-	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash -c 'until pg_isready 2>/dev/null; do sleep 1 ; done; echo "Database ready."'
+#db/bash:		## доступ в контейнер с БД
+#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash
+#.PHONY: db/bash
+#
+#db/log:		## посмотреть логи контейнера БД
+#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_DB)
+#.PHONY: db/log
+#
+#db/psql:		## интерактивный терминал PostgreSQL
+#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) psql -U ${POSTGRES_USER} ${POSTGRES_DB}
+#.PHONY: db/psql
+#
+#db/waiting_for_readiness:
+#	$(DOCKER_COMPOSE) exec $(DOCKER_DB) bash -c 'until pg_isready 2>/dev/null; do sleep 1 ; done; echo "Database ready."'
 
 #
 # Nginx
 #
 
-nginx/bash:		## доступ в контейнер c Nginx
-	$(DOCKER_COMPOSE) exec $(DOCKER_NGINX) bash
-.PHONY: nginx/bash
-
-nginx/log:		## посмотреть логи контейнера Nginx
-	$(DOCKER_COMPOSE) logs --follow $(DOCKER_NGINX)
-.PHONY: nginx/log
+#nginx/bash:		## доступ в контейнер c Nginx
+#	$(DOCKER_COMPOSE) exec $(DOCKER_NGINX) bash
+#.PHONY: nginx/bash
+#
+#nginx/log:		## посмотреть логи контейнера Nginx
+#	$(DOCKER_COMPOSE) logs --follow $(DOCKER_NGINX)
+#.PHONY: nginx/log
 
 #
 # ETL - Сервис по перекачиванию данных из PostgreSQL в ElasticSearch

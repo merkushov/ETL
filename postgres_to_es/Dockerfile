@@ -14,7 +14,7 @@ ENV PATH="/home/devuser/.local/bin:${PATH}"
 
 RUN apt-get update
 RUN apt-get install -y gcc musl-dev libpq-dev
-RUN apt-get install -y vim make curl git tree jq
+RUN apt-get install -y vim make curl git tree jq iputils-ping
 
 RUN mkdir /usr/src/postgres_to_es
 RUN chown -R devuser:devuser /usr/src/postgres_to_es
