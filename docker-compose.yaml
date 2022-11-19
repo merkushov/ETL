@@ -2,7 +2,7 @@ version: '3.9'
 services:
   es:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
-    container_name: yandex_p_es
+    container_name: yp_es
     env_file:
       - ./postgres_to_es/.env
     ulimits:
@@ -23,7 +23,7 @@ services:
       args:
         uid: ${HOST_UID}
         gid: ${HOST_GID}
-    container_name: yandex_p_etl
+    container_name: yp_etl
     user: "devuser"
 #    command: tail -f /dev/null
     command: python3 etl.py
